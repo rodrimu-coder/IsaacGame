@@ -1,0 +1,2741 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+<meta name="theme-color" content="#1a0a2e">
+<title>Dino Aventuras de Isaac 🦕</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+body{background:#0a0020;overflow:hidden;width:100vw;height:100vh;font-family:'Nunito','Comic Sans MS',cursive,sans-serif;}
+/* ── Landscape lock overlay ── */
+#rotate-msg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0020;z-index:9999;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;}
+@media (orientation:portrait) and (max-width:900px){
+  #rotate-msg{display:flex;}
+}
+canvas{display:block;touch-action:none;position:fixed;top:0;left:0;}
+#ui{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;}
+#hud{position:absolute;top:8px;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:0 12px;pointer-events:none;}
+.hud-box{background:rgba(0,0,0,0.55);border-radius:12px;padding:5px 12px;color:#fff;font-size:clamp(14px,4vw,20px);font-weight:900;font-family:'Nunito',sans-serif;display:flex;align-items:center;gap:6px;border:2px solid rgba(255,255,255,0.2);}
+#touch-controls{position:absolute;bottom:0;left:0;right:0;height:180px;display:flex;justify-content:space-between;align-items:flex-end;padding:16px 20px;pointer-events:all;}
+.ctrl-btn{width:clamp(60px,15vw,80px);height:clamp(60px,15vw,80px);border-radius:50%;background:rgba(255,255,255,0.15);border:3px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:clamp(22px,6vw,32px);cursor:pointer;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;pointer-events:all;touch-action:none;}
+#ctrl-jump{width:clamp(70px,18vw,90px)!important;height:clamp(70px,18vw,90px)!important;}
+#d-pad{display:flex;gap:8px;align-items:flex-end;}
+.big-btn{background:linear-gradient(135deg,#ff7700,#ff3300);color:#fff;border:none;border-radius:20px;padding:14px 36px;font-size:clamp(16px,4vw,24px);font-family:'Nunito',sans-serif;font-weight:900;cursor:pointer;box-shadow:0 6px 0 #990000;transition:transform 0.1s,box-shadow 0.1s;letter-spacing:1px;touch-action:manipulation;}
+.big-btn:active{transform:translateY(4px);box-shadow:0 2px 0 #990000;}
+.big-btn.b2{background:linear-gradient(135deg,#4466ff,#2233cc);box-shadow:0 6px 0 #112299;}
+.big-btn.b2:active{box-shadow:0 2px 0 #112299;}
+.big-btn.b3{background:linear-gradient(135deg,#44cc44,#228822);box-shadow:0 6px 0 #115511;}
+.big-btn.b3:active{box-shadow:0 2px 0 #115511;}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:safe center;z-index:200;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:16px 0;box-sizing:border-box;}
+.otitle{font-size:clamp(22px,6vw,40px);color:#ffe066;font-weight:900;font-family:'Nunito',sans-serif;text-shadow:0 4px 0 #996600;margin-bottom:16px;text-align:center;}
+#start-scr{background:linear-gradient(160deg,#0a0020,#1a0040,#0a1a30);}
+#world-scr{background:linear-gradient(160deg,#0a0020,#1a0040);padding-top:12px;justify-content:flex-start;overflow-y:auto;}
+#fact-scr{background:rgba(10,0,30,0.97);}
+#challenge-scr{background:rgba(10,0,30,0.94);}
+#complete-scr{background:rgba(10,0,30,0.96);}
+#gameover-scr{background:rgba(10,0,30,0.96);}
+#pause-scr{background:rgba(10,0,30,0.92);}
+.panel{border-radius:24px;padding:20px 18px;width:96%;max-width:500px;text-align:center;}
+#world-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px;width:100%;max-width:580px;} @media(max-width:500px){#world-grid{grid-template-columns:repeat(2,1fr);}}
+.wcard{background:rgba(255,255,255,0.08);border:3px solid rgba(255,255,255,0.15);border-radius:14px;padding:10px 6px;text-align:center;cursor:pointer;transition:transform 0.12s;position:relative;}
+.wcard.on{border-color:rgba(255,220,50,0.6);}
+.wcard.on:active{transform:scale(0.91);}
+.wcard.off{opacity:0.4;cursor:default;filter:grayscale(0.7);}
+.we{font-size:28px;}.wn{font-size:10px;color:#fff;font-weight:bold;margin-top:3px;}.ws{font-size:13px;margin-top:2px;}
+.ans-btn{background:rgba(255,255,255,0.1);color:#fff;border:2px solid rgba(255,255,255,0.3);border-radius:14px;padding:14px 8px;font-size:clamp(18px,5.5vw,26px);font-family:'Nunito',sans-serif;font-weight:900;cursor:pointer;touch-action:manipulation;}
+.ans-btn:active{transform:scale(0.92);}
+.ans-btn.ok{background:linear-gradient(135deg,#44cc44,#228822);border-color:#44ff44;}
+.ans-btn.no{background:linear-gradient(135deg,#cc2222,#881111);border-color:#ff4444;}
+.dino-bounce{font-size:clamp(60px,15vw,90px);text-align:center;animation:dbounce 0.9s infinite alternate;}
+@keyframes dbounce{from{transform:translateY(0);}to{transform:translateY(-12px);}}
+/* difficulty cards */
+.diff-card{border-radius:20px;padding:16px 20px;cursor:pointer;border:3px solid transparent;transition:transform 0.12s,border-color 0.12s;text-align:center;min-width:140px;flex:1;}
+.diff-card:active{transform:scale(0.93);}
+.diff-card.easy{background:linear-gradient(135deg,#1a4a1a,#2a7a2a);border-color:#44cc44;}
+.diff-card.normal{background:linear-gradient(135deg,#1a2a5a,#2a4aaa);border-color:#4488ff;}
+.diff-card.hard{background:linear-gradient(135deg,#4a1a1a,#aa2222);border-color:#ff4444;}
+.diff-title{font-size:clamp(18px,5vw,24px);font-weight:900;color:#fff;margin-bottom:6px;}
+.diff-desc{font-size:clamp(11px,3vw,13px);color:rgba(255,255,255,0.8);line-height:1.4;}
+/* Fallback para navegadores sin soporte de 'safe center': si no hay soporte,
+   usamos flex-start para garantizar scroll funcional por sobre estética perfecta */
+@supports not (justify-content: safe center) {
+  .overlay{justify-content:flex-start;}
+}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+<!-- Rotate to landscape prompt -->
+<div id="rotate-msg">
+  <div style="font-size:80px;margin-bottom:16px;">📱↔️</div>
+  <div style="color:#ffe066;font-size:28px;font-weight:900;font-family:'Nunito',sans-serif;margin-bottom:12px;">¡Gira el celular!</div>
+  <div style="color:#aaddff;font-size:18px;font-family:'Nunito',sans-serif;line-height:1.6;">Pon el teléfono horizontal<br>para jugar Dino Aventuras 🦕</div>
+  <div style="font-size:50px;margin-top:20px;animation:spin 2s infinite linear;">🔄</div>
+  <style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>
+</div>
+
+<!-- START -->
+<div id="start-scr" class="overlay" style="display:flex;">
+  <div class="dino-bounce" id="secret-dino" onclick="secretTap()" style="cursor:pointer;">🦕</div>
+  <div style="font-size:clamp(26px,7vw,54px);font-weight:900;color:#ffe066;text-shadow:0 0 20px #ff9900,0 4px 0 #b35900;margin-bottom:4px;text-align:center;">DINO AVENTURAS</div>
+  <div style="font-size:clamp(16px,4vw,28px);color:#7df9ff;text-shadow:0 0 10px #00cfff;margin-bottom:28px;">de Isaac 🌟</div>
+  <div style="display:flex;flex-direction:column;gap:14px;align-items:center;">
+    <button class="big-btn" onclick="showDiffSelect()">▶ JUGAR</button>
+    <button class="big-btn b2" onclick="showFactMenu()">🦖 Datos de Dinos</button>
+    <button class="big-btn" style="background:linear-gradient(135deg,#ffd700,#cc9900);box-shadow:0 6px 0 #997700;" onclick="showCustomScreen()">⚽ Personalizar Dino</button>
+  </div>
+  <!-- Secret tap counter indicator (hidden) -->
+  <div id="secret-hint" style="position:absolute;bottom:20px;color:rgba(255,255,255,0);font-size:12px;font-family:Nunito,sans-serif;transition:color 0.5s;">🦕🦕🦕🦕🦕</div>
+</div>
+
+<!-- DEV LEVEL SELECT -->
+<div id="dev-scr" class="overlay" style="background:rgba(0,0,0,0.97);">
+  <div style="background:linear-gradient(135deg,#0a0a2a,#1a0a3a);border:3px solid #ffe066;border-radius:20px;padding:24px;width:94%;max-width:480px;">
+    <div style="font-size:22px;font-weight:900;color:#ffe066;font-family:Nunito,sans-serif;margin-bottom:4px;">🔓 MODO DESARROLLADOR</div>
+    <div style="font-size:13px;color:#7df9ff;font-family:Nunito,sans-serif;margin-bottom:16px;">Acceso secreto de papá 🎮</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;" id="dev-level-grid"></div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
+      <button class="big-btn b2" style="padding:10px 20px;font-size:16px;" onclick="hide('dev-scr');show('start-scr')">← Salir</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOMIZE DINO ⚽ -->
+<div id="custom-scr" class="overlay">
+  <div style="font-size:clamp(22px,6vw,32px);font-weight:900;color:#ffe066;text-shadow:0 3px 0 #996600;margin-bottom:4px;text-align:center;">⚽ ¡VISTE A TU DINO!</div>
+  <div style="color:#aaddff;font-size:clamp(12px,3.2vw,15px);margin-bottom:14px;text-align:center;">Elige el color de tu selección favorita y accesorios</div>
+
+  <!-- Preview -->
+  <div style="background:rgba(0,0,0,0.3);border:3px solid rgba(255,220,50,0.4);border-radius:18px;width:92%;max-width:340px;height:140px;margin-bottom:16px;overflow:hidden;">
+    <canvas id="custom-preview-canvas" style="width:100%;height:100%;display:block;"></canvas>
+  </div>
+
+  <!-- Colores -->
+  <div style="color:#ffe066;font-size:13px;font-weight:900;font-family:Nunito,sans-serif;margin-bottom:6px;">🎨 COLOR / SELECCIÓN</div>
+  <div id="custom-colors" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:92%;max-width:420px;margin-bottom:18px;"></div>
+
+  <!-- Accesorios -->
+  <div style="color:#ffe066;font-size:13px;font-weight:900;font-family:Nunito,sans-serif;margin-bottom:6px;">⭐ ACCESORIOS (máximo 2)</div>
+  <div id="custom-accessories" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:92%;max-width:420px;margin-bottom:20px;"></div>
+
+  <button class="big-btn b3" style="padding:10px 28px;font-size:17px;" onclick="show('start-scr')">✅ ¡Listo!</button>
+</div>
+
+<!-- DIFFICULTY SELECT -->
+<div id="diff-scr" class="overlay">
+  <div style="font-size:clamp(24px,6vw,36px);font-weight:900;color:#ffe066;text-shadow:0 3px 0 #996600;margin-bottom:6px;">⚙️ DIFICULTAD</div>
+  <div style="color:#aaddff;font-size:clamp(13px,3.5vw,16px);margin-bottom:24px;">¿Cómo quiere jugar Isaac hoy?</div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;width:92%;max-width:560px;margin-bottom:24px;">
+    <div class="diff-card easy" onclick="chooseDiff('easy')">
+      <div style="font-size:36px;margin-bottom:8px;">🐣</div>
+      <div class="diff-title" style="color:#88ff88;">FÁCIL</div>
+      <div class="diff-desc">5 vidas · enemigos lentos<br>plataformas más largas<br>¡Para exploradores!</div>
+    </div>
+    <div class="diff-card normal" onclick="chooseDiff('normal')">
+      <div style="font-size:36px;margin-bottom:8px;">🦕</div>
+      <div class="diff-title" style="color:#88aaff;">NORMAL</div>
+      <div class="diff-desc">3 vidas · velocidad normal<br>el juego original<br>¡Para aventureros!</div>
+    </div>
+    <div class="diff-card hard" onclick="chooseDiff('hard')">
+      <div style="font-size:36px;margin-bottom:8px;">🦖</div>
+      <div class="diff-title" style="color:#ff8888;">DIFÍCIL</div>
+      <div class="diff-desc">2 vidas · enemigos rápidos<br>plataformas angostas<br>¡Para campeones!</div>
+    </div>
+  </div>
+  <button class="big-btn b2" style="padding:10px 28px;font-size:17px;" onclick="show('world-scr')">← Volver</button>
+</div>
+
+<!-- WORLD SELECT -->
+<div id="world-scr" class="overlay">
+  <div style="color:#ffe066;font-size:clamp(18px,5vw,26px);font-weight:900;margin-bottom:4px;">🗺️ ELIGE TU AVENTURA</div>
+  <div style="color:#aaddff;font-size:13px;margin-bottom:12px;">¡Colecciona ⭐ en cada nivel!</div>
+  <div id="world-grid"></div>
+  <button class="big-btn b2" style="margin-top:14px;padding:10px 26px;font-size:17px;" onclick="show('start-scr')">← Inicio</button>
+</div>
+
+<!-- DINO FACT -->
+<div id="fact-scr" class="overlay">
+  <div class="panel" style="background:linear-gradient(135deg,#0a3020,#0a2040);border:4px solid #ffe066;max-height:90vh;overflow-y:auto;">
+    <div id="fn" style="font-size:clamp(20px,5vw,28px);color:#ffe066;font-weight:900;font-family:'Nunito',sans-serif;letter-spacing:1px;"></div>
+    <div id="fe" style="font-size:clamp(52px,13vw,80px);margin:10px 0;"></div>
+    <div id="ft" style="color:#ffffff;font-size:clamp(15px,4vw,19px);line-height:1.65;margin-bottom:10px;font-family:'Nunito',sans-serif;font-weight:700;text-align:left;padding:0 4px;"></div>
+    <div id="fd" style="color:#7df9ff;font-size:clamp(13px,3.5vw,16px);line-height:1.5;margin-bottom:18px;font-family:'Nunito',sans-serif;font-weight:600;text-align:left;padding:0 4px;background:rgba(0,0,0,0.25);border-radius:10px;padding:8px 10px;"></div>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="big-btn b3" onclick="nextFact()">Otro Dino 🦴</button>
+      <button class="big-btn b2" id="fact-back-btn" onclick="factBack()">← Volver</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHALLENGE -->
+<div id="challenge-scr" class="overlay">
+  <div class="panel" style="background:linear-gradient(135deg,#1a1060,#0a2060);border:4px solid #7df9ff;">
+    <div id="ch-lives" style="font-size:clamp(18px,5vw,24px);margin-bottom:6px;"></div>
+    <div id="ch-title" style="font-size:clamp(14px,4vw,18px);color:#ffe066;margin-bottom:8px;"></div>
+    <div id="ch-q" style="font-size:clamp(22px,6vw,36px);color:#fff;font-weight:900;margin:10px 0 18px;line-height:1.2;"></div>
+    <div id="ch-ans" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;"></div>
+    <div id="ch-hint" style="color:#aaddff;font-size:clamp(12px,3.5vw,15px);min-height:20px;"></div>
+  </div>
+</div>
+
+<!-- LEVEL COMPLETE -->
+<div id="complete-scr" class="overlay">
+  <div class="otitle" id="compl-msg">🎉 ¡NIVEL COMPLETADO! 🎉</div>
+  <div id="compl-stars" style="font-size:clamp(40px,12vw,64px);margin:8px 0;"></div>
+  <div id="compl-detail" style="color:#fff;font-size:clamp(14px,4vw,18px);margin-bottom:20px;"></div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;">
+    <button class="big-btn b3" id="next-lvl-btn">Siguiente ▶</button>
+    <button class="big-btn b2" onclick="showWorldSelect()">Mapa 🗺️</button>
+  </div>
+</div>
+
+<!-- BOSS FIGHT SCREEN -->
+<div id="boss-scr" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;">
+
+  <!-- CANVAS: top half, absolute positioned -->
+  <canvas id="boss-canvas" style="position:absolute;top:0;left:0;display:block;"></canvas>
+
+  <!-- UI: bottom half, absolute positioned -->
+  <div id="boss-ui" style="position:absolute;left:0;width:100%;background:rgba(8,0,22,0.97);border-top:2px solid rgba(255,180,0,0.4);box-sizing:border-box;padding:10px 14px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;">
+
+    <!-- Título + barras HP -->
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <div style="text-align:center;min-width:48px;">
+        <div style="color:#7df9ff;font-size:10px;font-family:Nunito,sans-serif;font-weight:700;">ISAAC 🦕</div>
+        <div id="boss-player-hp" style="font-size:clamp(14px,3.5vw,20px);line-height:1.1;">❤️❤️❤️</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+        <div style="background:rgba(255,50,50,0.2);border-radius:5px;height:10px;overflow:hidden;">
+          <div id="boss-player-bar" style="height:100%;background:linear-gradient(90deg,#ff2222,#ff8888);border-radius:5px;transition:width 0.4s;width:100%;"></div>
+        </div>
+        <div style="color:#ffe066;font-size:clamp(12px,3vw,16px);font-weight:900;font-family:Nunito,sans-serif;text-align:center;">⚔️ <span id="boss-name-label">BATALLA</span></div>
+        <div style="background:rgba(150,50,255,0.2);border-radius:5px;height:10px;overflow:hidden;">
+          <div id="boss-enemy-bar" style="height:100%;background:linear-gradient(90deg,#aa22ff,#ff44cc);border-radius:5px;transition:width 0.4s;width:100%;"></div>
+        </div>
+      </div>
+      <div style="text-align:center;min-width:48px;">
+        <div id="boss-name-right" style="color:#ff9966;font-size:10px;font-family:Nunito,sans-serif;font-weight:700;"></div>
+        <div id="boss-enemy-hp" style="font-size:clamp(14px,3.5vw,20px);line-height:1.1;">💜💜💜</div>
+      </div>
+    </div>
+
+    <!-- Pregunta -->
+    <div id="boss-msg" style="color:#fff;font-size:clamp(14px,3.5vw,19px);font-family:Nunito,sans-serif;font-weight:800;text-align:center;line-height:1.3;flex-shrink:0;"></div>
+
+    <!-- Botones -->
+    <div id="boss-actions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;flex-shrink:0;align-content:start;padding-bottom:12px;"></div>
+
+  </div>
+</div>
+
+<!-- BOSS WIN SCREEN -->
+<div id="boss-win-scr" class="overlay" style="background:rgba(5,0,15,0.97);overflow-y:auto;">
+  <div style="text-align:center;padding:20px;max-width:440px;width:92%;margin:auto;">
+    <div id="bw-emoji" style="font-size:clamp(60px,15vw,90px);margin-bottom:8px;"></div>
+    <div style="font-size:clamp(22px,6vw,36px);font-weight:900;color:#ffe066;font-family:Nunito,sans-serif;text-shadow:0 3px 0 #996600;margin-bottom:4px;">¡VICTORIA! 🏆</div>
+    <div id="bw-dino-name" style="font-size:clamp(18px,5vw,26px);color:#ff9966;font-family:Nunito,sans-serif;font-weight:900;margin-bottom:12px;"></div>
+    <div style="background:linear-gradient(135deg,#0a3020,#0a2040);border:3px solid #ffe066;border-radius:18px;padding:16px;margin-bottom:16px;">
+      <div style="color:#7df9ff;font-size:clamp(11px,3vw,14px);font-family:Nunito,sans-serif;font-weight:700;margin-bottom:6px;">🔓 DATO SECRETO DESBLOQUEADO</div>
+      <div id="bw-secret" style="color:#fff;font-size:clamp(13px,3.5vw,16px);font-family:Nunito,sans-serif;font-weight:700;line-height:1.55;"></div>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="big-btn b3" id="bw-next-btn">Siguiente ▶</button>
+      <button class="big-btn b2" onclick="showWorldSelect()">🗺️ Mapa</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div id="gameover-scr" class="overlay">
+  <div class="otitle">😤 ¡VAMOS DE NUEVO!</div>
+  <div style="font-size:clamp(50px,14vw,80px);margin-bottom:14px;">💪</div>
+  <div style="color:#aaddff;font-size:clamp(15px,4vw,20px);margin-bottom:24px;text-align:center;padding:0 20px;">¡Los héroes no se rinden!<br>¡Isaac puede lograrlo!</div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;">
+    <button class="big-btn" onclick="restartLevel()">🔄 Reintentar</button>
+    <button class="big-btn b2" onclick="showWorldSelect()">Mapa 🗺️</button>
+  </div>
+</div>
+
+<!-- PAUSE -->
+<div id="pause-scr" class="overlay">
+  <div class="otitle">⏸ PAUSA</div>
+  <div id="pause-diff-info" style="color:#7df9ff;font-size:15px;margin-bottom:10px;font-family:'Nunito',sans-serif;"></div>
+  <div style="display:flex;flex-direction:column;gap:14px;align-items:center;">
+    <button class="big-btn b3" onclick="resumeGame()">▶ Continuar</button>
+    <button class="big-btn" onclick="restartLevel()">🔄 Reiniciar</button>
+    <button class="big-btn b2" onclick="showWorldSelect()">🗺️ Mapa</button>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="ui" style="display:none;">
+  <div id="hud">
+    <div class="hud-box" id="hud-lives">❤️❤️❤️</div>
+    <div class="hud-box" style="flex-direction:column;padding:2px 10px;cursor:pointer;gap:0;" onclick="pauseGame()">
+      <span style="font-size:10px;color:#aaa;" id="hud-diff-label">NORMAL</span>
+      <span id="hud-level">1</span>
+    </div>
+    <div class="hud-box"><span id="hud-eggs">🥚 0/0</span></div>
+  </div>
+  <div id="touch-controls">
+    <div id="d-pad">
+      <div class="ctrl-btn" id="ctrl-left">◀</div>
+      <div class="ctrl-btn" id="ctrl-right">▶</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+      <div class="ctrl-btn" style="width:50px!important;height:50px!important;font-size:18px!important;" onclick="pauseGame()">⏸</div>
+      <div class="ctrl-btn" id="ctrl-jump">⬆</div>
+    </div>
+  </div>
+</div>
+
+<canvas id="c"></canvas>
+
+<script>
+// ─── DINO FACTS ────────────────────────────────────────────
+const FACTS=[
+  {n:"T-Rex",e:"🦖",t:"¡El Tiranosaurio Rex tenía dientes del tamaño de plátanos! Medía 12 metros — como 3 autos juntos.",d:"Vivió hace 66 millones de años. Sus brazos eran cortos pero muy fuertes."},
+  {n:"Triceratops",e:"🦏",t:"¡El Triceratops tenía 3 cuernos y una cresta ósea enorme! Los usaba para defenderse del T-Rex.",d:"Medía 9 metros. Era herbívoro — solo comía plantas."},
+  {n:"Brachiosaurus",e:"🦒",t:"¡El Braquiosaurio era tan alto como un edificio de 4 pisos! Comía hojas de los árboles más altos.",d:"Pesaba 60 toneladas — como 10 elefantes juntos."},
+  {n:"Velociraptor",e:"🦅",t:"¡El Velociraptor tenía plumas como un pájaro! Era muy inteligente y cazaba en grupo.",d:"Era del tamaño de un pavo grande. ¡Muy rápido y listo!"},
+  {n:"Stegosaurus",e:"🦕",t:"¡El Estegosaurio tenía placas en la espalda que cambiaban de color! Las usaba para comunicarse.",d:"Sus placas eran del tamaño de una silla. Sobrevivió millones de años."},
+  {n:"Ankylosaurus",e:"🛡️",t:"¡El Ankylosaurio era como un tanque viviente! Su cola con una bola de hueso golpeaba a los enemigos.",d:"Su armadura era tan fuerte que ni el T-Rex podía morderlo."},
+  {n:"Pterodáctilo",e:"🦇",t:"¡El Pterodáctilo no era un dinosaurio, era un reptil volador! Sus alas eran de piel.",d:"Algunos tenían alas de 10 metros. ¡Pescaban zambulléndose al mar!"},
+  {n:"Spinosaurus",e:"🐊",t:"¡El Spinosaurus era más grande que el T-Rex! Tenía una vela en la espalda y comía peces.",d:"Era el carnívoro más grande. Podía nadar y caminar en tierra."},
+  {n:"Diplodocus",e:"🐍",t:"¡El Diplodocus tenía el cuello y la cola más largos de todos! Su cola funcionaba como un látigo.",d:"Medía 27 metros de largo pero tenía la cabeza muy pequeña."},
+  {n:"Parasaurolophus",e:"🎺",t:"¡El Parasaurolophus tenía una cresta como trompeta! Soplaba aire para hacer sonidos muy fuertes.",d:"Vivía en manadas y avisaba a los demás del peligro. ¡El DJ de los dinos!"},
+];
+
+// ─── GAME WORLD CONSTANTS ──────────────────────────────────
+// All game coords are in a virtual 800x450 space, scaled to screen
+const GW=800, GH=450;  // game world dimensions
+const GROUND_Y=380;    // y coordinate of main ground
+const FALL_KILL=460;   // if player.y > this, they die
+
+// ─── LEVEL DATA ────────────────────────────────────────────
+// Platforms: {x,y,w,h, move?,range?,speed?, timed?,onTime?,offTime?}
+// Eggs: {x,y}
+// Enemies: {x,y,range} -- patrol left/right
+// challenge: {x, type:'math'|'word'|'syllable', op:'sum'|'sub'|'mul', label}
+// dinoFact: {x, dino: index}
+// checkpoints: [{x,y}]  -- player respawns here after death
+// endX: level finish line
+
+const LEVELS=[
+// ── 0: Bosque de los Saltos (Tutorial) ─────────────────────
+{world:0,name:"Bosque de los Saltos",emoji:"🌿",
+ bg1:"#061206",bg2:"#0d2b0d",gColor:"#2d5a2d",gTop:"#4a8a3a",
+ sky:["#040a04","#0d2b0d"],width:3600,
+ platforms:[
+   {x:0,   y:GROUND_Y,w:580,h:120},           // start island
+   {x:680, y:310,     w:220,h:20},             // jump 1  (gap=100px)
+   {x:980, y:270,     w:180,h:20},             // jump 2
+   {x:1220,y:310,     w:180,h:20},             // jump 3
+   {x:1470,y:GROUND_Y,w:700,h:120},           // big island
+   {x:2250,y:330,     w:200,h:20},             // floating 1 (gap=80px)
+   {x:2530,y:290,     w:200,h:20},             // floating 2
+   {x:2800,y:GROUND_Y,w:800,h:120},           // end island
+ ],
+ eggs:[{x:720,y:270},{x:1020,y:230},{x:1260,y:270},{x:1600,y:330},
+       {x:2290,y:290},{x:2570,y:250},{x:2900,y:330}],
+ enemies:[{x:1600,y:330,range:180},{x:2950,y:330,range:160}],
+ checkpoints:[{x:1500,y:310}],
+ challenge:{x:2700,type:"math",op:"sum",label:"Puerta Mágica"},
+ dinoFact:{x:1300,dino:0},
+ endX:3500,
+},
+// ── 1: Río de Plataformas ───────────────────────────────────
+{world:0,name:"Río de Plataformas",emoji:"💧",
+ bg1:"#050e1a",bg2:"#0a1a2a",gColor:"#1a3a5a",gTop:"#2a5a8a",
+ sky:["#020608","#0a1a2a"],width:3800,water:true,
+ platforms:[
+   {x:0,   y:GROUND_Y,w:380,h:120},
+   {x:480, y:310,w:130,h:20,move:true,range:80, speed:1.3},
+   {x:700, y:270,w:110,h:20,move:true,range:60, speed:1.6},
+   {x:900, y:310,w:130,h:20,move:true,range:80, speed:1.2},
+   {x:1130,y:GROUND_Y,w:500,h:120},
+   {x:1720,y:300,w:120,h:20,move:true,range:90,speed:1.4},
+   {x:1940,y:260,w:110,h:20,move:true,range:70,speed:1.7},
+   {x:2140,y:300,w:120,h:20,move:true,range:85,speed:1.3},
+   {x:2360,y:GROUND_Y,w:600,h:120},
+   {x:3040,y:320,w:150,h:20},
+   {x:3260,y:GROUND_Y,w:540,h:120},
+ ],
+ eggs:[{x:520,y:270},{x:740,y:230},{x:940,y:270},{x:1230,y:330},
+       {x:1760,y:260},{x:1980,y:220},{x:2180,y:260},{x:2460,y:330},{x:3100,y:280}],
+ enemies:[{x:1250,y:330,range:200},{x:2460,y:330,range:200}],
+ checkpoints:[{x:1150,y:310},{x:2380,y:310}],
+ challenge:{x:3150,type:"math",op:"sub",label:"Puente de Restas"},
+ dinoFact:{x:1600,dino:1},
+ endX:3700,
+},
+// ── 2: Valle de Rocas ───────────────────────────────────────
+{world:1,name:"Valle de Rocas",emoji:"⛰️",
+ bg1:"#100a04",bg2:"#1a0f08",gColor:"#4a2a10",gTop:"#6a4a20",
+ sky:["#080504","#1a0f08"],width:3800,
+ platforms:[
+   {x:0,   y:GROUND_Y,w:480,h:120},
+   {x:580, y:310,w:170,h:20},
+   {x:830, y:270,w:150,h:20},
+   {x:1060,y:310,w:170,h:20},
+   {x:1300,y:GROUND_Y,w:600,h:120},
+   {x:2000,y:330,w:190,h:20},
+   {x:2270,y:290,w:160,h:20},
+   {x:2500,y:GROUND_Y,w:1300,h:120},
+ ],
+ eggs:[{x:620,y:270},{x:870,y:230},{x:1100,y:270},{x:1400,y:330},
+       {x:2040,y:290},{x:2310,y:250},{x:2600,y:330},{x:2900,y:330}],
+ enemies:[{x:1420,y:330,range:200},{x:2650,y:330,range:200},{x:3000,y:330,range:180}],
+ checkpoints:[{x:1320,y:310},{x:2520,y:310}],
+ fallingRocks:[{x:700,interval:3200},{x:1000,interval:2600},{x:1180,interval:3600}],
+ challenge:{x:2380,type:"math",op:"sub",label:"La Gran Puerta"},
+ dinoFact:{x:1700,dino:2},
+ endX:3700,
+},
+// ── 3: Cueva Oscura ─────────────────────────────────────────
+{world:1,name:"Cueva Oscura",emoji:"🕯️",
+ bg1:"#020205",bg2:"#050510",gColor:"#1a1a3a",gTop:"#2a2a5a",
+ sky:["#010103","#050510"],width:3800,dark:true,
+ platforms:[
+   {x:0,   y:GROUND_Y,w:500,h:120},
+   {x:600, y:320,w:150,h:20},
+   {x:840, y:280,w:130,h:20},
+   {x:1060,y:320,w:150,h:20},
+   {x:1300,y:GROUND_Y,w:600,h:120},
+   {x:2000,y:330,w:170,h:20},
+   {x:2260,y:290,w:150,h:20},
+   {x:2500,y:GROUND_Y,w:1300,h:120},
+ ],
+ eggs:[{x:640,y:280},{x:880,y:240},{x:1100,y:280},{x:1400,y:330},
+       {x:2040,y:290},{x:2300,y:250},{x:2600,y:330},{x:2850,y:330}],
+ enemies:[{x:1400,y:330,range:200},{x:2600,y:330,range:200}],
+ checkpoints:[{x:1320,y:310},{x:2520,y:310}],
+ challenge:{x:2360,type:"word",label:"Puerta de Palabras"},
+ dinoFact:{x:1600,dino:3},
+ endX:3700,
+},
+// ── 4: Islas de Lava ────────────────────────────────────────
+{world:2,name:"Islas de Lava",emoji:"🌋",
+ bg1:"#0d0200",bg2:"#1a0500",gColor:"#3a1000",gTop:"#5a2000",
+ sky:["#080100","#1a0500"],width:3800,lava:true,
+ platforms:[
+   {x:0,   y:GROUND_Y,w:380,h:120},
+   {x:480, y:310,w:120,h:20,move:true,range:0,speed:0},
+   {x:680, y:270,w:110,h:20,timed:true,onTime:2200,offTime:1400},
+   {x:870, y:310,w:120,h:20,move:true,range:70,speed:1.4},
+   {x:1070,y:GROUND_Y,w:340,h:120},
+   {x:1510,y:290,w:110,h:20,timed:true,onTime:2600,offTime:1100},
+   {x:1700,y:250,w:120,h:20,move:true,range:80,speed:1.4},
+   {x:1920,y:310,w:110,h:20,timed:true,onTime:2800,offTime:1200},
+   {x:2120,y:GROUND_Y,w:400,h:120},
+   {x:2620,y:320,w:130,h:20,move:true,range:100,speed:1.5},
+   {x:2860,y:GROUND_Y,w:940,h:120},
+ ],
+ eggs:[{x:520,y:270},{x:720,y:230},{x:910,y:270},{x:1160,y:330},
+       {x:1550,y:250},{x:1740,y:210},{x:1960,y:270},{x:2220,y:330},{x:2950,y:330}],
+ enemies:[{x:1160,y:330,range:180},{x:2220,y:330,range:180},{x:3000,y:330,range:180}],
+ checkpoints:[{x:1090,y:310},{x:2140,y:310}],
+ challenge:{x:2720,type:"math",op:"mul",label:"Puerta de Fuego"},
+ dinoFact:{x:1650,dino:4},
+ endX:3700,
+},
+// ── 5: Castillo del Dino ────────────────────────────────────
+{world:2,name:"Castillo del Dino",emoji:"🏰",
+ bg1:"#0a0408",bg2:"#10080a",gColor:"#3a1520",gTop:"#5a2535",
+ sky:["#050204","#10080a"],width:4000,
+ platforms:[
+   {x:0,   y:GROUND_Y,w:480,h:120},
+   {x:580, y:320,w:150,h:20},
+   {x:820, y:280,w:130,h:20},
+   {x:1040,y:320,w:150,h:20},
+   {x:1280,y:GROUND_Y,w:450,h:120},
+   {x:1830,y:330,w:130,h:20,move:true,range:85,speed:1.4},
+   {x:2060,y:290,w:120,h:20,timed:true,onTime:2500,offTime:1100},
+   {x:2280,y:GROUND_Y,w:500,h:120},
+   {x:2880,y:330,w:140,h:20,move:true,range:100,speed:1.6},
+   {x:3120,y:GROUND_Y,w:880,h:120},
+ ],
+ eggs:[{x:620,y:280},{x:860,y:240},{x:1080,y:280},{x:1380,y:330},
+       {x:1870,y:290},{x:2100,y:250},{x:2380,y:330},{x:2920,y:290},{x:3200,y:330},{x:3500,y:330}],
+ enemies:[{x:1380,y:330,range:200},{x:2380,y:330,range:200},{x:3200,y:330,range:200},{x:3600,y:330,range:150}],
+ checkpoints:[{x:1300,y:310},{x:2300,y:310},{x:3140,y:310}],
+ challenge:{x:2960,type:"math",op:"sum",label:"Puerta del Castillo"},
+ dinoFact:{x:2100,dino:5},
+ endX:3900,
+},
+// ── 6: Puentes de Sílabas ───────────────────────────────────
+{world:3,name:"Puentes de Sílabas",emoji:"📚",
+ bg1:"#050514",bg2:"#0a0a2a",gColor:"#1a1a4a",gTop:"#2a2a7a",
+ sky:["#020208","#0a0a2a"],width:3800,
+ platforms:[
+   {x:0,   y:GROUND_Y,w:460,h:120},
+   {x:560, y:320,w:150,h:20},
+   {x:800, y:280,w:130,h:20},
+   {x:1020,y:320,w:150,h:20},
+   {x:1260,y:GROUND_Y,w:500,h:120},
+   {x:1860,y:330,w:160,h:20},
+   {x:2110,y:290,w:140,h:20},
+   {x:2350,y:GROUND_Y,w:600,h:120},
+   {x:3050,y:330,w:170,h:20},
+   {x:3320,y:GROUND_Y,w:480,h:120},
+ ],
+ eggs:[{x:600,y:280},{x:840,y:240},{x:1060,y:280},{x:1360,y:330},
+       {x:1900,y:290},{x:2150,y:250},{x:2450,y:330},{x:3090,y:290},{x:3400,y:330}],
+ enemies:[{x:1360,y:330,range:200},{x:2450,y:330,range:180},{x:3400,y:330,range:160}],
+ checkpoints:[{x:1280,y:310},{x:2370,y:310}],
+ challenge:{x:2900,type:"syllable",label:"Puente Mágico"},
+ dinoFact:{x:1650,dino:6},
+ endX:3700,
+},
+// ── 7: Gran Final Dino ──────────────────────────────────────
+{world:3,name:"Gran Final Dino",emoji:"🏆",
+ bg1:"#0d0520",bg2:"#1a0a30",gColor:"#3a1a60",gTop:"#5a2a80",
+ sky:["#060214","#1a0a30"],width:4200,
+ platforms:[
+   {x:0,   y:GROUND_Y,w:460,h:120},
+   {x:560, y:320,w:150,h:20},
+   {x:800, y:280,w:130,h:20},
+   {x:1020,y:320,w:150,h:20},
+   {x:1260,y:GROUND_Y,w:440,h:120},
+   {x:1800,y:330,w:130,h:20,move:true,range:90,speed:1.5},
+   {x:2030,y:290,w:120,h:20,timed:true,onTime:2100,offTime:1200},
+   {x:2250,y:GROUND_Y,w:420,h:120},
+   {x:2770,y:330,w:130,h:20,move:true,range:100,speed:1.7},
+   {x:3000,y:290,w:120,h:20,timed:true,onTime:2500,offTime:1000},
+   {x:3220,y:GROUND_Y,w:600,h:120},
+   {x:3930,y:GROUND_Y,w:270,h:120},
+ ],
+ eggs:[{x:600,y:280},{x:840,y:240},{x:1060,y:280},{x:1360,y:330},
+       {x:1840,y:290},{x:2070,y:250},{x:2350,y:330},
+       {x:2810,y:290},{x:3050,y:250},{x:3320,y:330},{x:3500,y:330}],
+ enemies:[{x:1360,y:330,range:200},{x:2350,y:330,range:200},{x:3400,y:330,range:200},{x:3600,y:330,range:180}],
+ checkpoints:[{x:1280,y:310},{x:2270,y:310},{x:3240,y:310}],
+ challenge:{x:3730,type:"word",label:"Puerta Final"},
+ dinoFact:{x:2150,dino:7},
+ boss:{id:'trex',triggerX:4000},
+ endX:4100,
+},
+
+
+// ── 8: Count Master - Mundo de Números (nivel especial bonus)
+// Plataformas con números flotantes que hay que sumar/restar
+{world:4,name:"Cuevas del Conteo",emoji:"🔢",
+ bg1:"#0a0520",bg2:"#150a3a",gColor:"#2a1a5a",gTop:"#4a2a9a",
+ sky:["#050310","#150a3a"],width:3800,countMaster:true,
+ platforms:[
+   {x:0,   y:340,w:460,h:140},
+   {x:560, y:280,w:150,h:20},
+   {x:800, y:240,w:130,h:20},
+   {x:1020,y:280,w:150,h:20},
+   {x:1260,y:340,w:500,h:140},
+   {x:1860,y:300,w:140,h:20,move:true,range:80,speed:1.2},
+   {x:2100,y:260,w:120,h:20,move:true,range:60,speed:1.4},
+   {x:2320,y:300,w:140,h:20},
+   {x:2560,y:340,w:600,h:140},
+   {x:3260,y:300,w:160,h:20},
+   {x:3520,y:340,w:280,h:140},
+ ],
+ eggs:[{x:600,y:240},{x:840,y:200},{x:1060,y:240},{x:1360,y:300},
+       {x:1900,y:260},{x:2140,y:220},{x:2420,y:260},{x:2660,y:300},
+       {x:3300,y:260},{x:3560,y:300}],
+ enemies:[{x:1360,y:300,range:180},{x:2660,y:300,range:180}],
+ checkpoints:[{x:1280,y:270},{x:2580,y:270}],
+ countGates:[
+   {x:740, num1:3, num2:4, op:'+'},
+   {x:1560,num1:8, num2:3, op:'-'},
+   {x:2200,num1:2, num2:5, op:'+'},
+   {x:3100,num1:9, num2:4, op:'-'},
+ ],
+ challenge:{x:3380,type:"math",op:"sum",label:"Puerta Final"},
+ dinoFact:{x:1600,dino:8},
+ boss:{id:'tricera',triggerX:3550},
+ endX:3700,
+},
+// ── 9: Count Master - Templo de las Multiplicaciones
+{world:4,name:"Templo Numérico",emoji:"✖️",
+ bg1:"#200510",bg2:"#3a0a20",gColor:"#5a1530",gTop:"#8a2550",
+ sky:["#100208","#3a0a20"],width:4000,countMaster:true,
+ platforms:[
+   {x:0,   y:340,w:400,h:140},
+   {x:500, y:280,w:140,h:20},
+   {x:730, y:240,w:120,h:20,timed:true,onTime:2500,offTime:1000},
+   {x:950, y:280,w:140,h:20},
+   {x:1190,y:340,w:440,h:140},
+   {x:1730,y:300,w:130,h:20,move:true,range:80,speed:1.3},
+   {x:1980,y:260,w:110,h:20,timed:true,onTime:2200,offTime:1100},
+   {x:2200,y:300,w:130,h:20},
+   {x:2440,y:340,w:500,h:140},
+   {x:3040,y:300,w:130,h:20,move:true,range:90,speed:1.5},
+   {x:3280,y:260,w:110,h:20,timed:true,onTime:2000,offTime:1200},
+   {x:3500,y:340,w:500,h:140},
+ ],
+ eggs:[{x:540,y:240},{x:770,y:200},{x:990,y:240},{x:1290,y:300},
+       {x:1770,y:260},{x:2020,y:220},{x:2300,y:260},{x:2540,y:300},
+       {x:3080,y:260},{x:3320,y:220},{x:3580,y:300}],
+ enemies:[{x:1290,y:300,range:180},{x:2540,y:300,range:180},{x:3580,y:300,range:150}],
+ checkpoints:[{x:1210,y:270},{x:2460,y:270},{x:3520,y:270}],
+ countGates:[
+   {x:620, num1:3, num2:3, op:'×'},
+   {x:1430,num1:2, num2:6, op:'×'},
+   {x:2090,num1:4, num2:3, op:'×'},
+   {x:2860,num1:5, num2:2, op:'×'},
+ ],
+ challenge:{x:3660,type:"math",op:"mul",label:"Puerta Maestra"},
+ dinoFact:{x:1700,dino:9},
+ boss:{id:'spino',triggerX:3750},
+ endX:3900,
+},
+];
+
+// ─── BOSS DATA ─────────────────────────────────────────────
+const BOSSES={
+  trex:{
+    name:'T-Rex',emoji:'🦖',color:'#8B2500',darkColor:'#5a1200',
+    hp:6, playerHp:3,
+    attacks:['¡RUGE y sacude el suelo!','¡CARGA directo!','¡Abre su gran mandíbula!'],
+    attackEmoji:['😤','💨','👄'],
+    weakness:'¡Sus brazos son muy cortos — no puede bloquear bien por arriba!',
+    secretFact:'¡El T-Rex tenía la mordida más fuerte de todos los dinosaurios — 3 veces más fuerte que un cocodrilo! Pero sus brazos eran tan cortos que NO podía rascarse la nariz. 😂',
+    phases:[
+      {hpThreshold:1.0, speed:'lento', msg:'¡El T-Rex acaba de despertar! Está un poco dormido...'},
+      {hpThreshold:0.5, speed:'normal', msg:'😤 ¡El T-Rex está enojado! ¡Se pone más rápido!'},
+      {hpThreshold:0.25, speed:'rápido', msg:'🔥 ¡PELIGRO! ¡El T-Rex está FURIOSO!'},
+    ],
+    questions:[
+      {q:'¿Cuántos dientes tenía el T-Rex?',opts:['50','60','20','100'],ans:'60'},
+      {q:'¿Qué tan alto era el T-Rex?',opts:['4 metros','8 metros','12 metros','20 metros'],ans:'8 metros'},
+      {q:'¿El T-Rex era...?',opts:['Herbívoro','Carnívoro','Los dos','Ninguno'],ans:'Carnívoro'},
+      {q:'¿Cuánto pesaba el T-Rex?',opts:['1 ton','5 ton','8 ton','20 ton'],ans:'8 ton'},
+      {q:'¿Dónde vivía el T-Rex?',opts:['África','Europa','América','Asia'],ans:'América'},
+    ]
+  },
+  tricera:{
+    name:'Triceratops',emoji:'🦏',color:'#1a5a1a',darkColor:'#0a3a0a',
+    hp:5, playerHp:3,
+    attacks:['¡Carga con sus 3 cuernos!','¡Golpea con su cresta!','¡Sacude la cabeza!'],
+    attackEmoji:['🔱','💥','🌀'],
+    weakness:'¡Tienes que apuntar entre los cuernos — es su único punto débil!',
+    secretFact:'¡El Triceratops tenía más de 800 dientes! Y cuando se le caían, le salían nuevos automáticamente. Era como tener dientes para toda la vida. 🦷✨',
+    phases:[
+      {hpThreshold:1.0, speed:'lento', msg:'¡El Triceratops te mira con sus 3 cuernos!'},
+      {hpThreshold:0.5, speed:'normal', msg:'🔱 ¡Los cuernos brillan! ¡Está más agresivo!'},
+      {hpThreshold:0.25, speed:'rápido', msg:'💥 ¡CUIDADO! ¡El Triceratops carga a máxima velocidad!'},
+    ],
+    questions:[
+      {q:'¿Cuántos cuernos tenía el Triceratops?',opts:['1','2','3','4'],ans:'3'},
+      {q:'¿Qué comía el Triceratops?',opts:['Carne','Plantas','Peces','Todo'],ans:'Plantas'},
+      {q:'¿Para qué usaba sus cuernos?',opts:['Para comer','Defenderse','Dormir','Nadar'],ans:'Defenderse'},
+      {q:'¿Cuánto medía el Triceratops?',opts:['3m','6m','9m','15m'],ans:'9m'},
+      {q:'¿El Triceratops era contemporáneo del...?',opts:['Diplodocus','T-Rex','Spinosaurus','Todos'],ans:'T-Rex'},
+    ]
+  },
+  spino:{
+    name:'Spinosaurus',emoji:'🐊',color:'#003366',darkColor:'#001a33',
+    hp:7, playerHp:3,
+    attacks:['¡Golpea con su enorme vela dorsal!','¡Lanza agua con su cola!','¡Atrapa con sus garras!'],
+    attackEmoji:['⚡','💧','🦞'],
+    weakness:'¡La vela en su espalda es sensible — apunta ahí!',
+    secretFact:'¡El Spinosaurus era el dinosaurio carnívoro MÁS GRANDE que existió — más grande que el T-Rex! Podía nadar como un cocodrilo y sus fosas nasales estaban arriba del hocico para respirar en el agua. 🌊🐊',
+    phases:[
+      {hpThreshold:1.0, speed:'lento', msg:'¡El Spinosaurus emerge del agua!'},
+      {hpThreshold:0.5, speed:'normal', msg:'⚡ ¡La vela brilla! ¡Se está cargando de energía!'},
+      {hpThreshold:0.25, speed:'rápido', msg:'🌊 ¡MÁXIMO PELIGRO! ¡El Spinosaurus desató todo su poder!'},
+    ],
+    questions:[
+      {q:'¿El Spinosaurus era más grande que el T-Rex?',opts:['Sí','No','Igual','No sé'],ans:'Sí'},
+      {q:'¿Qué tenía en la espalda el Spinosaurus?',opts:['Escamas','Una vela','Plumas','Espinas cortas'],ans:'Una vela'},
+      {q:'¿Qué comía principalmente el Spinosaurus?',opts:['Plantas','Dinosaurios','Peces','Insectos'],ans:'Peces'},
+      {q:'¿Dónde vivía el Spinosaurus?',opts:['América','Asia','África','Europa'],ans:'África'},
+      {q:'¿Para qué servía la vela del Spinosaurus?',opts:['Volar','Regular temperatura','Atacar','Nadar más rápido'],ans:'Regular temperatura'},
+    ]
+  }
+};
+
+// ─── BOSS FIGHT ENGINE ──────────────────────────────────────
+let BS=null; // Boss State
+let bossCanvas=null, bossCtx=null, bossRaf=null;
+
+function startBoss(bossId, levelIdx){
+  const boss=BOSSES[bossId];
+  if(!boss)return;
+  SFX.win(); // dramatic entry sound
+  hide('gameover-scr');hide('complete-scr');
+  // Setup boss state
+  BS={
+    id:bossId, boss,
+    playerHp:boss.playerHp, playerMaxHp:boss.playerMaxHp||boss.playerHp,
+    enemyHp:boss.hp, enemyMaxHp:boss.hp,
+    phase:0,
+    levelIdx,
+    // Projectile: egg Isaac throws
+    egg:{x:60,y:200,vx:0,vy:0,active:false},
+    // Enemy boss character — positioned dynamically in render
+    enemy:{x:0,y:0,vx:-1.2,vy:0,dir:-1,state:'idle',hitFlash:0,
+           bobY:0, scale:1, shakeX:0},
+    // Isaac character in boss arena
+    player:{x:0,y:0,dir:1,animF:0,animT:0,jumping:false},
+    // Thrown eggs (multiple)
+    projectiles:[],
+    // Enemy projectiles
+    enemyProj:[],
+    // Phase message
+    phaseMsg:'',phaseMsgT:0,
+    // Turn system
+    turn:'question',  // 'question' | 'result' | 'enemy_attack'
+    currentQ:null,
+    qAnswered:false,
+    attackAnim:0,
+    result:null,  // 'hit' | 'miss' | 'enemy_hit'
+    resultT:0,
+    t:0,
+    particles:[],
+    screenShake:0,
+    won:false,
+    lost:false,
+    eggsCooldown:0,
+    questionIdx:0,
+  };
+  // Shuffle questions
+  BS.questions=[...boss.questions].sort(()=>Math.random()-0.5);
+  BS.currentQ=BS.questions[BS.questionIdx];
+
+  // Setup UI
+  document.getElementById('boss-name-label').textContent=boss.name+' '+boss.emoji;
+  document.getElementById('boss-name-right').textContent=boss.emoji+' '+boss.name;
+  updateBossHUD();
+
+  // Canvas fills top 50% of screen minus padding
+  bossCanvas=document.getElementById('boss-canvas');
+  bossCtx=bossCanvas.getContext('2d');
+  const screenW=window.innerWidth;
+  const screenH=window.innerHeight;
+  const isMobile = screenW < 768;
+  const isPortraitC = screenH > screenW;
+
+  // La UI necesita un MÍNIMO garantizado para que los 4 botones de
+  // respuesta SIEMPRE sean visibles sin cortarse:
+  // título(22) + hp-row(46) + gap(8) + msg(44) + gap(8) + 2 filas botones(60c/u=120) + gap(8) + padding(20) + paddingBottom(12)
+  const uiMinNeeded = 22+46+8+44+8+120+8+20+12; // ≈ 288px
+
+  let canvasH;
+  if(isMobile && isPortraitC) canvasH = Math.round(screenH * 0.30);
+  else if(isMobile)           canvasH = Math.round(screenH * 0.48);
+  else                        canvasH = Math.round(screenH * 0.50);
+
+  // Si el canvas calculado deja menos espacio del mínimo necesario para
+  // la UI, reducimos el canvas para garantizar que la UI completa entre.
+  // Si aun así no entra (pantallas muy chicas), boss-ui usará scroll interno.
+  const maxCanvasH = screenH - uiMinNeeded;
+  canvasH = Math.max(60, Math.min(canvasH, maxCanvasH));
+
+  const uiTop = canvasH;
+  const uiHeight = screenH - uiTop;
+
+  // Set canvas size and position
+  bossCanvas.width  = screenW;
+  bossCanvas.height = canvasH;
+  bossCanvas.style.width  = screenW + 'px';
+  bossCanvas.style.height = canvasH + 'px';
+
+  // Set UI panel position — altura real disponible, con scroll de respaldo
+  const bossUI = document.getElementById('boss-ui');
+  if(bossUI){
+    bossUI.style.top    = uiTop + 'px';
+    bossUI.style.height = uiHeight + 'px';
+  }
+
+  // Start phase 0 message
+  BS.phaseMsg=boss.phases[0].msg;
+  BS.phaseMsgT=3;
+
+  // Show screen
+  hide('boss-win-scr');
+  document.getElementById('boss-scr').style.display='block';
+  renderBossQuestion();
+
+  if(bossRaf)cancelAnimationFrame(bossRaf);
+  bossRaf=requestAnimationFrame(bossTickFn);
+}
+
+function updateBossHUD(){
+  const b=BS;
+  // Player HP hearts
+  document.getElementById('boss-player-hp').textContent=
+    '❤️'.repeat(Math.max(0,b.playerHp))+'🖤'.repeat(Math.max(0,b.playerMaxHp-b.playerHp));
+  // Enemy HP hearts
+  document.getElementById('boss-enemy-hp').textContent=
+    '💜'.repeat(Math.max(0,b.enemyHp))+'🖤'.repeat(Math.max(0,b.enemyMaxHp-b.enemyHp));
+  // Bars
+  const pPct=Math.max(0,b.playerHp/b.playerMaxHp*100)+'%';
+  const ePct=Math.max(0,b.enemyHp/b.enemyMaxHp*100)+'%';
+  document.getElementById('boss-player-bar').style.width=pPct;
+  document.getElementById('boss-enemy-bar').style.width=ePct;
+}
+
+function renderBossQuestion(){
+  const b=BS;
+  const box=document.getElementById('boss-actions');
+  const msg=document.getElementById('boss-msg');
+  box.innerHTML='';
+  if(b.won||b.lost)return;
+  if(b.turn==='question'&&b.currentQ){
+    // Show question text + instruction
+    msg.innerHTML='<div style="font-size:clamp(15px,3.8vw,20px);color:#fff;margin-bottom:4px;">'+b.currentQ.q+'</div><div style="font-size:clamp(11px,2.5vw,14px);color:#aaddff;opacity:0.9;">🥚 ¡Responde y lanza el huevo!</div>';
+    b.currentQ.opts.forEach(opt=>{
+      const btn=document.createElement('button');
+      btn.style.cssText='background:rgba(255,255,255,0.1);color:#fff;border:2px solid rgba(255,255,255,0.3);border-radius:12px;padding:0 8px;min-height:56px;font-size:clamp(14px,3.5vw,20px);font-family:Nunito,sans-serif;font-weight:900;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;text-align:center;width:100%;box-sizing:border-box;line-height:1.2;display:flex;align-items:center;justify-content:center;';
+      btn.textContent=opt;
+      btn.onclick=()=>bossAnswer(opt);
+      box.appendChild(btn);
+    });
+  }
+}
+
+function bossAnswer(chosen){
+  if(BS.turn!=='question'||BS.qAnswered)return;
+  BS.qAnswered=true;
+  document.querySelectorAll('#boss-actions button').forEach(b=>{
+    b.disabled=true;
+    b.style.opacity='0.4';
+    b.style.cursor='default';
+  });
+  const correct=BS.currentQ.ans;
+  if(chosen===correct){
+    SFX.correct();
+    BS.result='hit';
+    BS.turn='throw';
+    document.getElementById('boss-msg').textContent='✅ ¡Correcto! ¡Huevo lanzado! 🥚';
+    // Animate egg — use same canvas percentage positions as renderBoss
+    const cW2=bossCanvas?bossCanvas.width:400;
+    const cH2=bossCanvas?bossCanvas.height:200;
+    const pX=cW2*0.13, pY=cH2*0.55;   // Isaac pos
+    const eX=cW2*0.72, eY=cH2*0.35;   // Enemy pos
+    const dx=eX-pX, dy=eY-pY;
+    const dist=Math.sqrt(dx*dx+dy*dy)||1;
+    BS.egg={x:pX+20,y:pY,vx:(dx/dist)*12,vy:(dy/dist)*12,active:true,hit:false};
+    BS.resultT=2;
+    document.getElementById('boss-actions').innerHTML='';
+  } else {
+    SFX.wrong();
+    BS.result='miss';
+    BS.turn='enemy_attack';
+    document.getElementById('boss-msg').textContent='❌ ¡Fallaste! '+BS.boss.attackEmoji[0]+' ¡El '+BS.boss.name+' ataca!';
+    BS.resultT=2.5;
+    BS.enemyAttacking=true;
+    document.getElementById('boss-actions').innerHTML='';
+    // Enemy projectile
+    // Use canvas percentage positions (same as renderBoss sets them)
+    const cW=bossCanvas?bossCanvas.width:400;
+    const cH=bossCanvas?bossCanvas.height:200;
+    const epX=cW*0.72, epY=cH*0.40;   // enemy position (right side, mid)
+    const tpX=cW*0.13, tpY=cH*0.55;   // Isaac position (left side)
+    const edx=tpX-epX, edy=tpY-epY, ed=Math.sqrt(edx*edx+edy*edy)||1;
+    BS.enemyProj.push({x:epX,y:epY,vx:(edx/ed)*10,vy:(edy/ed)*10,life:2.0,sz:18});
+  }
+}
+
+function bossNextQuestion(){
+  BS.questionIdx=(BS.questionIdx+1)%BS.questions.length;
+  BS.currentQ=BS.questions[BS.questionIdx];
+  BS.qAnswered=false;
+  BS.turn='question';
+  BS.result=null;
+  BS.enemyAttacking=false;
+  renderBossQuestion();
+}
+
+let bossLastT=0;
+function bossTickFn(now){
+  if(!BS||BS.won||BS.lost){bossRaf=null;return;}
+  const dt=Math.min((now-bossLastT)/1000,0.05);
+  bossLastT=now;
+  updateBoss(dt);
+  renderBoss();
+  bossRaf=requestAnimationFrame(bossTickFn);
+}
+
+function updateBoss(dt){
+  const b=BS;
+  b.t+=dt;
+
+  // Phase message countdown
+  if(b.phaseMsgT>0){b.phaseMsgT-=dt;if(b.phaseMsgT<=0)b.phaseMsg='';}
+
+  // Screen shake
+  if(b.screenShake>0)b.screenShake-=dt*6;
+
+  // Boss enemy bob/animation
+  const speedFactor=b.phase>=2?1.8:b.phase>=1?1.3:1;
+  b.enemy.bobY=Math.sin(b.t*3*speedFactor)*8;
+  b.enemy.animT=(b.enemy.animT||0)+dt;
+  b.enemy.hitFlash=Math.max(0,b.enemy.hitFlash-dt*4);
+  if(b.enemy.scale>1)b.enemy.scale=Math.max(1,b.enemy.scale-dt*3);
+  if(b.enemy.shakeX!==0)b.enemy.shakeX*=0.8;
+
+  // Player bob
+  b.player.animT+=dt;
+
+  // Egg projectile
+  if(b.egg&&b.egg.active){
+    b.egg.x+=b.egg.vx*60*dt;
+    b.egg.y+=b.egg.vy*60*dt;
+    // No gravity - straight line for clean boss battle
+    // Hit enemy
+    // Hit detection using canvas percentage positions
+    const cWh=bossCanvas?bossCanvas.width:400, cHh=bossCanvas?bossCanvas.height:200;
+    const eHitX=cWh*0.72, eHitY=cHh*0.35;
+    const e=b.enemy;
+    e.x=eHitX; e.y=eHitY; // keep in sync
+    if(!b.egg.hit&&b.egg.x>eHitX-80&&b.egg.x<eHitX+100&&b.egg.y>eHitY-80&&b.egg.y<eHitY+80){
+      b.egg.hit=true;b.egg.active=false;
+      b.enemyHp=Math.max(0,b.enemyHp-1);
+      b.enemy.hitFlash=1;b.enemy.scale=1.3;b.enemy.shakeX=10;
+      b.screenShake=0.3;
+      SFX.stomp();
+      // Boss particles
+      for(let i=0;i<12;i++){
+        const a=Math.random()*Math.PI*2;
+        b.particles.push({x:e.x+20,y:e.y+30,vx:Math.cos(a)*120,vy:Math.sin(a)*120-50,life:0.6,col:'#ff6600',sz:5});
+      }
+      updateBossHUD();
+      // Check phase change
+      checkBossPhase();
+      // Check win
+      if(b.enemyHp<=0){setTimeout(()=>bossFight_Win(),800);return;}
+      setTimeout(()=>bossNextQuestion(),1200);
+    }
+    // Miss (off screen)
+    if(b.egg.x>bossCanvas.width+30||b.egg.y>bossCanvas.height+30){
+      b.egg.active=false;
+      setTimeout(()=>bossNextQuestion(),600);
+    }
+  }
+
+  // Enemy projectiles
+  b.enemyProj.forEach(p=>{
+    p.x+=p.vx*60*dt;p.y+=p.vy*60*dt;p.life-=dt; // no gravity, straight shot
+    // Hit player
+    const cWp=bossCanvas?bossCanvas.width:400, cHp=bossCanvas?bossCanvas.height:200;
+    const plHitX=cWp*0.13, plHitY=cHp*0.55;
+    if(p.life>0&&Math.abs(p.x-plHitX)<60&&Math.abs(p.y-plHitY)<60){
+      p.life=-1;
+      b.playerHp=Math.max(0,b.playerHp-1);
+      b.screenShake=0.4;
+      SFX.hurt();
+      for(let i=0;i<8;i++){
+        const a=Math.random()*Math.PI*2;
+        b.particles.push({x:plHitX,y:plHitY,vx:Math.cos(a)*80,vy:Math.sin(a)*80-40,life:0.5,col:'#ff4444',sz:4});
+      }
+      updateBossHUD();
+      if(b.playerHp<=0){setTimeout(()=>bossFight_Lose(),600);return;}
+    }
+  });
+  b.enemyProj=b.enemyProj.filter(p=>p.life>0&&p.x>-20);
+
+  // Timer-based: if enemy attack playing, auto-advance
+  if(b.resultT>0){
+    b.resultT-=dt;
+    if(b.resultT<=0&&b.turn==='enemy_attack'&&!b.enemyProj.length){
+      b.resultT=0;
+      bossNextQuestion();
+    }
+  }
+
+  // Particles
+  b.particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=200*dt;p.life-=dt;});
+  b.particles=b.particles.filter(p=>p.life>0);
+}
+
+function checkBossPhase(){
+  const b=BS;
+  const ratio=b.enemyHp/b.enemyMaxHp;
+  const phases=b.boss.phases;
+  let newPhase=0;
+  if(ratio<=0.25)newPhase=2;
+  else if(ratio<=0.5)newPhase=1;
+  if(newPhase>b.phase){
+    b.phase=newPhase;
+    b.phaseMsg=phases[newPhase].msg;
+    b.phaseMsgT=3.5;
+    b.screenShake=0.6;
+    document.getElementById('boss-msg').textContent='⚠️ '+phases[newPhase].msg;
+  }
+}
+
+function renderBoss(){
+  const b=BS;
+  if(!bossCanvas||!bossCtx)return;
+  const W=bossCanvas.width, H=bossCanvas.height;
+  const ctx=bossCtx;
+  ctx.clearRect(0,0,W,H);
+
+  // Update dynamic positions based on canvas size
+  BS.player.x=W*0.13; BS.player.y=H*0.55;
+  BS.enemy.x=W*0.72;  BS.enemy.y=H*0.25;
+  // Also fix egg start position
+  if(BS.egg&&!BS.egg.active&&BS.turn==='throw'){
+    BS.egg.x=BS.player.x+20; BS.egg.y=BS.player.y;
+  }
+
+  // Background — dramatic arena
+  const bossColor=b.boss.color;
+  const bgGr=ctx.createLinearGradient(0,0,0,H);
+  bgGr.addColorStop(0,b.boss.darkColor);bgGr.addColorStop(1,'#000');
+  ctx.fillStyle=bgGr;ctx.fillRect(0,0,W,H);
+
+  // Screen shake offset
+  const sk=b.screenShake>0?(Math.random()-0.5)*8*b.screenShake:0;
+  ctx.save();ctx.translate(sk,0);
+
+  // Arena ground
+  const groundY=H*0.88;
+  const groundGr=ctx.createLinearGradient(0,groundY,0,H);
+  groundGr.addColorStop(0,'#2a1a00');groundGr.addColorStop(1,'#000');
+  ctx.fillStyle=groundGr;ctx.fillRect(0,groundY,W,H-groundY);
+  ctx.fillStyle='rgba(255,150,0,0.15)';ctx.fillRect(0,groundY,W,3);
+
+  // Dramatic background cracks/energy lines based on phase
+  if(b.phase>=1){
+    ctx.strokeStyle=`rgba(255,100,0,${0.1+b.phase*0.1})`;ctx.lineWidth=1;
+    for(let i=0;i<6;i++){
+      const lx=W*0.1+i*(W*0.14);
+      ctx.beginPath();ctx.moveTo(lx,0);ctx.lineTo(lx+20,H);ctx.stroke();
+    }
+  }
+
+  // Phase warning flash
+  if(b.phaseMsgT>0&&b.phaseMsgT>3){
+    ctx.fillStyle=`rgba(255,50,0,${(b.phaseMsgT-3)*0.3})`;
+    ctx.fillRect(0,0,W,H);
+  }
+
+  // Draw player (Isaac's dino — left side) con su color/accesorios personalizados
+  const pl=b.player;
+  const ps=H/200; // player scale
+  const pX=W*0.12, pY=groundY-50*ps;
+  const pBob=Math.sin(b.t*3)*3;
+  const pColor=getDinoColor();
+  const pAcc=dinoCustom.accessories||[];
+  ctx.save();ctx.translate(pX,pY+pBob);
+  // Cuerpo
+  ctx.fillStyle=pColor.body;
+  ctx.beginPath();ctx.ellipse(0,0,18*ps,22*ps,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=pColor.belly;
+  ctx.beginPath();ctx.ellipse(5*ps,0,12*ps,16*ps,0,0,Math.PI*2);ctx.fill();
+  // Estrella en el pecho (si tiene)
+  if(pAcc.includes('star')){
+    ctx.fillStyle='#ffe066';ctx.font=`900 ${9*ps}px sans-serif`;ctx.textAlign='center';
+    ctx.fillText('⭐',5*ps,2*ps);
+  }
+  // Cabeza
+  ctx.fillStyle=pColor.body;
+  ctx.beginPath();ctx.ellipse(16*ps,-18*ps,14*ps,12*ps,0.2,0,Math.PI*2);ctx.fill();
+  // Ojo
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(20*ps,-20*ps,5*ps,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#000';ctx.beginPath();ctx.arc(21*ps,-19*ps,3*ps,0,Math.PI*2);ctx.fill();
+  // Brazo levantado para lanzar
+  ctx.fillStyle=pColor.tail;
+  ctx.save();
+  const armAngle=b.egg&&b.egg.active?-0.8:-0.3;
+  ctx.rotate(armAngle);
+  ctx.fillRect(10*ps,-8*ps,24*ps,7*ps);
+  ctx.restore();
+  // Banda de capitán (si tiene)
+  if(pAcc.includes('captain')){
+    ctx.fillStyle='#ffe066';
+    ctx.save();ctx.translate(2*ps,-4*ps);ctx.rotate(-0.5);
+    ctx.fillRect(-8*ps,-3*ps,16*ps,5*ps);ctx.restore();
+  }
+  // Corona (si tiene)
+  if(pAcc.includes('crown')){
+    ctx.font=`${14*ps}px sans-serif`;ctx.textAlign='center';
+    ctx.fillText('👑',16*ps,-32*ps);
+  }
+  // Lentes pro (si tiene)
+  if(pAcc.includes('goggles')){
+    ctx.fillStyle='#222';
+    ctx.beginPath();ctx.ellipse(20*ps,-19*ps,6*ps,4*ps,0.1,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(100,200,255,0.7)';
+    ctx.beginPath();ctx.ellipse(20*ps,-19*ps,4*ps,2.5*ps,0.1,0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
+
+  // Draw egg projectile with trail
+  if(b.egg&&b.egg.active){
+    // Trail
+    for(let ti=1;ti<=4;ti++){
+      const tx=b.egg.x - b.egg.vx*60*(1/60)*ti*0.5;
+      const ty=b.egg.y - b.egg.vy*60*(1/60)*ti*0.5;
+      ctx.globalAlpha=0.15*(5-ti);
+      ctx.fillStyle='#ffe066';
+      ctx.beginPath();ctx.ellipse(tx,ty,8,11,0,0,Math.PI*2);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    const spinAngle=b.t*20;
+    ctx.save();ctx.translate(b.egg.x,b.egg.y);ctx.rotate(spinAngle);
+    ctx.fillStyle='#ffe066';
+    ctx.beginPath();ctx.ellipse(0,0,12,16,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.6)';
+    ctx.beginPath();ctx.ellipse(-3,-5,4,7,0.3,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
+
+  // Draw enemy boss (right side) — different look per boss
+  const e=b.enemy;
+  const eX=W*0.72, eY=groundY-10+e.bobY;
+  const eScale=H/200*e.scale*(b.id==='spino'?1.4:b.id==='trex'?1.3:1.1);
+  ctx.save();
+  ctx.translate(eX+e.shakeX,eY);
+  if(b.enemy.hitFlash>0){
+    ctx.filter=`brightness(${1+b.enemy.hitFlash*2})`;
+  }
+
+  if(b.id==='trex'){
+    // T-Rex: big red dino, tiny arms
+    ctx.fillStyle=b.enemy.hitFlash>0.5?'#ff8866':'#8B2500';
+    // Body
+    ctx.beginPath();ctx.ellipse(0,-30*eScale,28*eScale,38*eScale,-0.3,0,Math.PI*2);ctx.fill();
+    // Head (big)
+    ctx.fillStyle=b.enemy.hitFlash>0.5?'#ff8866':'#7a2000';
+    ctx.beginPath();ctx.ellipse(-20*eScale,-70*eScale,32*eScale,22*eScale,-0.15,0,Math.PI*2);ctx.fill();
+    // Jaw
+    ctx.fillStyle='#5a1500';
+    ctx.beginPath();ctx.ellipse(-22*eScale,-58*eScale,28*eScale,10*eScale,0,0,Math.PI*2);ctx.fill();
+    // Teeth
+    ctx.fillStyle='#fff';
+    for(let ti=0;ti<4;ti++){ctx.fillRect(-34*eScale+ti*8*eScale,-62*eScale,5*eScale,8*eScale);}
+    // Eye
+    ctx.fillStyle='#ff0';ctx.beginPath();ctx.arc(-8*eScale,-74*eScale,7*eScale,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#000';ctx.beginPath();ctx.arc(-8*eScale,-74*eScale,4*eScale,0,Math.PI*2);ctx.fill();
+    // Tiny arms (comedy)
+    ctx.fillStyle='#7a2000';
+    ctx.save();ctx.translate(-10*eScale,-20*eScale);ctx.rotate(0.8);
+    ctx.fillRect(0,0,14*eScale,6*eScale);ctx.restore();
+    // Tail
+    ctx.fillStyle='#8B2500';
+    ctx.beginPath();ctx.moveTo(28*eScale,-20*eScale);ctx.lineTo(65*eScale,10*eScale);ctx.lineTo(28*eScale,0);ctx.fill();
+    // Legs
+    ctx.fillStyle='#6a1a00';
+    ctx.fillRect(-15*eScale,12*eScale,18*eScale,30*eScale);
+    ctx.fillRect(8*eScale,12*eScale,18*eScale,30*eScale);
+
+  } else if(b.id==='tricera'){
+    // Triceratops: stocky, green, 3 horns
+    ctx.fillStyle=b.enemy.hitFlash>0.5?'#88ff88':'#1a6a1a';
+    // Body (big and round)
+    ctx.beginPath();ctx.ellipse(0,-22*eScale,35*eScale,30*eScale,0,0,Math.PI*2);ctx.fill();
+    // Head with frill
+    ctx.fillStyle=b.enemy.hitFlash>0.5?'#88ff88':'#228822';
+    ctx.beginPath();ctx.ellipse(-28*eScale,-38*eScale,26*eScale,20*eScale,0.2,0,Math.PI*2);ctx.fill();
+    // Frill (neck shield)
+    ctx.fillStyle='#cc4400';
+    ctx.beginPath();ctx.ellipse(-18*eScale,-52*eScale,22*eScale,16*eScale,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ff6600';
+    for(let fi=0;fi<5;fi++){
+      ctx.beginPath();ctx.arc(-28*eScale+fi*10*eScale,-58*eScale,4*eScale,0,Math.PI*2);ctx.fill();
+    }
+    // 3 horns!
+    ctx.fillStyle='#f0c060';
+    // Long nose horn
+    ctx.save();ctx.translate(-46*eScale,-42*eScale);ctx.rotate(-0.3);
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-22*eScale,-5*eScale);ctx.lineTo(0,8*eScale);ctx.fill();
+    ctx.restore();
+    // Two brow horns
+    ctx.save();ctx.translate(-32*eScale,-56*eScale);ctx.rotate(-0.5);
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-16*eScale,-4*eScale);ctx.lineTo(0,6*eScale);ctx.fill();
+    ctx.restore();
+    ctx.save();ctx.translate(-16*eScale,-60*eScale);ctx.rotate(-0.4);
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-14*eScale,-3*eScale);ctx.lineTo(0,5*eScale);ctx.fill();
+    ctx.restore();
+    // Eye
+    ctx.fillStyle='#ff0';ctx.beginPath();ctx.arc(-22*eScale,-42*eScale,6*eScale,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#000';ctx.beginPath();ctx.arc(-22*eScale,-42*eScale,3.5*eScale,0,Math.PI*2);ctx.fill();
+    // Legs
+    ctx.fillStyle='#1a5a1a';
+    ctx.fillRect(-25*eScale,8*eScale,16*eScale,28*eScale);
+    ctx.fillRect(-5*eScale,8*eScale,16*eScale,28*eScale);
+    ctx.fillRect(14*eScale,8*eScale,16*eScale,28*eScale);
+    ctx.fillRect(28*eScale,8*eScale,16*eScale,28*eScale);
+
+  } else if(b.id==='spino'){
+    // Spinosaurus: blue-green, huge sail
+    ctx.fillStyle=b.enemy.hitFlash>0.5?'#88ccff':'#003d7a';
+    // Body
+    ctx.beginPath();ctx.ellipse(0,-28*eScale,30*eScale,36*eScale,-0.2,0,Math.PI*2);ctx.fill();
+    // THE SAIL (dramatic!)
+    const sailGlow=0.5+Math.sin(b.t*4)*0.3;
+    ctx.fillStyle=`rgba(0,150,255,${sailGlow})`;
+    ctx.beginPath();
+    ctx.moveTo(-5*eScale,0);
+    ctx.quadraticCurveTo(-30*eScale,-110*eScale,5*eScale,-90*eScale);
+    ctx.quadraticCurveTo(25*eScale,-70*eScale,10*eScale,0);
+    ctx.fill();
+    // Sail glow outline
+    ctx.strokeStyle=`rgba(100,200,255,${sailGlow})`;ctx.lineWidth=2;
+    ctx.stroke();
+    // Head (long snout like croc)
+    ctx.fillStyle=b.enemy.hitFlash>0.5?'#88ccff':'#004488';
+    ctx.beginPath();ctx.ellipse(-28*eScale,-62*eScale,30*eScale,14*eScale,-0.1,0,Math.PI*2);ctx.fill();
+    // Teeth
+    ctx.fillStyle='#ddeeff';
+    for(let ti=0;ti<5;ti++){ctx.fillRect(-48*eScale+ti*9*eScale,-66*eScale,5*eScale,7*eScale);}
+    // Eye
+    ctx.fillStyle='#ff0';ctx.beginPath();ctx.arc(-14*eScale,-68*eScale,6*eScale,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#000';ctx.beginPath();ctx.arc(-14*eScale,-68*eScale,3.5*eScale,0,Math.PI*2);ctx.fill();
+    // Arms (longer than T-Rex)
+    ctx.fillStyle='#003d7a';
+    ctx.save();ctx.translate(-12*eScale,-10*eScale);ctx.rotate(0.5);
+    ctx.fillRect(0,0,20*eScale,8*eScale);ctx.restore();
+    // Legs
+    ctx.fillStyle='#002d5a';
+    ctx.fillRect(-18*eScale,8*eScale,16*eScale,30*eScale);
+    ctx.fillRect(8*eScale,8*eScale,16*eScale,30*eScale);
+    // Tail (long)
+    ctx.fillStyle='#003d7a';
+    ctx.beginPath();ctx.moveTo(28*eScale,-10*eScale);ctx.lineTo(70*eScale,20*eScale);ctx.lineTo(28*eScale,5*eScale);ctx.fill();
+  }
+
+  ctx.filter='none';
+  ctx.restore();
+
+  // Enemy projectiles (rocks/fireballs)
+  b.enemyProj.forEach(p=>{
+    const pAlpha=Math.min(1,p.life*2);
+    ctx.globalAlpha=pAlpha;
+    const wobble=Math.sin(b.t*8)*3;
+    const pSz=p.sz||14;
+    ctx.fillStyle=b.id==='spino'?'#0088ff':b.id==='tricera'?'#88cc22':'#ff4400';
+    ctx.beginPath();ctx.arc(p.x,p.y+wobble,pSz,0,Math.PI*2);ctx.fill();
+    // Glow effect
+    ctx.fillStyle=b.id==='spino'?'rgba(0,136,255,0.3)':b.id==='tricera'?'rgba(136,204,34,0.3)':'rgba(255,68,0,0.3)';
+    ctx.beginPath();ctx.arc(p.x,p.y+wobble,pSz*1.8,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.5)';
+    ctx.beginPath();ctx.arc(p.x-pSz*0.3,p.y+wobble-pSz*0.3,pSz*0.35,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=1;
+  });
+
+  // Particles
+  b.particles.forEach(p=>{
+    ctx.globalAlpha=Math.max(0,p.life*2);
+    ctx.fillStyle=p.col;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.sz,0,Math.PI*2);ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // Phase message overlay
+  if(b.phaseMsg&&b.phaseMsgT>0){
+    const alpha=Math.min(1,b.phaseMsgT)*Math.min(1,4-b.phaseMsgT>0?4-b.phaseMsgT:1);
+    ctx.globalAlpha=Math.max(0,alpha);
+    ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(0,H*0.3,W,H*0.3);
+    ctx.fillStyle='#ff4400';
+    ctx.font=`bold ${Math.max(12,W*0.045)}px Nunito,sans-serif`;ctx.textAlign='center';
+    ctx.fillText(b.phaseMsg,W/2+sk,H*0.48);
+    ctx.globalAlpha=1;
+  }
+
+  // HP text on canvas
+  ctx.fillStyle='rgba(255,255,255,0.6)';
+  ctx.font=`bold ${Math.max(10,W*0.03)}px Nunito,sans-serif`;ctx.textAlign='left';
+  ctx.fillText('ISAAC 🦕',W*0.04,20);
+  ctx.textAlign='right';
+  ctx.fillText(b.boss.emoji+' '+b.boss.name,W*0.96,20);
+
+  ctx.restore(); // end screen shake
+}
+
+function bossFight_Win(){
+  if(bossRaf)cancelAnimationFrame(bossRaf);bossRaf=null;
+  SFX.siuu();
+  const b=BS;
+  hide('boss-scr');
+  document.getElementById('bw-emoji').textContent=b.boss.emoji+' ⚽';
+  document.getElementById('bw-dino-name').textContent='¡GOOOL! ¡Venciste al '+b.boss.name+'! 🐐';
+  document.getElementById('bw-secret').textContent=b.boss.secretFact;
+  const nb=document.getElementById('bw-next-btn');
+  const nextLvl=b.levelIdx+1;
+  if(nextLvl<LEVELS.length){
+    nb.style.display='';
+    nb.onclick=()=>{hide('boss-win-scr');startLevel(nextLvl);};
+  } else {
+    nb.style.display='none';
+  }
+  // Save progress
+  if(b.levelIdx+1>prog.unlocked)prog.unlocked=Math.min(b.levelIdx+1,LEVELS.length);
+  saveProg();
+  document.getElementById('boss-win-scr').style.display='flex';
+}
+
+function bossFight_Lose(){
+  if(bossRaf)cancelAnimationFrame(bossRaf);bossRaf=null;
+  SFX.hurt();
+  BS.lost=true;
+  document.getElementById('boss-msg').textContent='😵 ¡El '+BS.boss.name+' ganó esta vez! ¡Isaac puede ganar!';
+  const box=document.getElementById('boss-actions');
+  box.innerHTML='';
+  const rb=document.createElement('button');
+  rb.className='big-btn';rb.style.marginTop='8px';rb.textContent='🔄 ¡Revancha!';
+  rb.onclick=()=>startBoss(BS.id,BS.levelIdx);
+  const mb=document.createElement('button');
+  mb.className='big-btn b2';mb.style.marginTop='8px';mb.textContent='🗺️ Mapa';
+  mb.onclick=()=>{hide('boss-scr');showWorldSelect();};
+  box.appendChild(rb);box.appendChild(mb);
+}
+
+// ─── CHALLENGE GENERATORS ──────────────────────────────────
+function genCh(type,op){
+  if(type==="math"){
+    if(op==="sum"){
+      const a=rnd(1,9),b=rnd(1,9),ans=a+b;
+      return{q:`${a} + ${b} = ?`,correct:ans,choices:wc(ans,0,18)};
+    }
+    if(op==="sub"){
+      const b=rnd(1,7),a=b+rnd(1,8),ans=a-b;
+      return{q:`${a} - ${b} = ?`,correct:ans,choices:wc(ans,0,15)};
+    }
+    if(op==="mul"){
+      const ts=[2,3,4,5],t=ts[rnd(0,3)],b=rnd(1,5),ans=t*b;
+      return{q:`${t} × ${b} = ?`,correct:ans,choices:wc(ans,1,20)};
+    }
+  }
+  if(type==="word"){
+    const ws=[
+      {q:"¿Cómo se escribe el animal que ruge?",correct:"LEON",w:["LEEN","LION","LEUN"]},
+      {q:"¿Qué animal vive en el mar y es muy grande?",correct:"BALLENA",w:["BALENA","VALLENA","BAYENA"]},
+      {q:"¿Cómo se llama el animal con trompa?",correct:"ELEFANTE",w:["ELIFANTE","ELEPHANTE","ELFANTE"]},
+      {q:"¿Qué dinosaurio tenía 3 cuernos?",correct:"TRICERATOPS",w:["TRISERATOPS","TRICERATOSP","TRICERATOS"]},
+      {q:"¿Cómo se escribe el dino más grande?",correct:"SPINOSAURUS",w:["ESPINOSAURIO","SPINOSAURO","SPINOSAUROS"]},
+    ];
+    const w=ws[rnd(0,ws.length-1)];
+    return{q:w.q,correct:w.correct,choices:shuf([w.correct,...w.w.slice(0,3)])};
+  }
+  if(type==="syllable"){
+    const ss=[
+      {q:"¿Cuántas sílabas tiene DI-NO-SAU-RIO?",correct:"4",w:["2","3","5"]},
+      {q:"¿Cuál es la primera sílaba de DINOSAURIO?",correct:"DI",w:["NO","SA","RI"]},
+      {q:"¿Qué sílaba falta? DI-NO-SAU-___-O",correct:"RI",w:["SA","AU","NO"]},
+      {q:"¿Cuántas sílabas tiene VOL-CÁN?",correct:"2",w:["1","3","4"]},
+      {q:"¿Cuál es la primera sílaba de HUEVO?",correct:"HUE",w:["VO","UE","EVO"]},
+    ];
+    const s=ss[rnd(0,ss.length-1)];
+    return{q:s.q,correct:s.correct,choices:shuf([s.correct,...s.w])};
+  }
+  return{q:"2+2=?",correct:4,choices:[3,4,5,6]};
+}
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function wc(ans,mn,mx){
+  const s=new Set([ans]);
+  while(s.size<4){const v=rnd(mn,mx);if(v!==ans)s.add(v);}
+  return shuf([...s]);
+}
+function shuf(a){return [...a].sort(()=>Math.random()-0.5);}
+
+// ─── SOUND SYSTEM (Web Audio API — works offline) ──────────
+let AC=null;
+function getAC(){
+  if(!AC)try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
+  // Resume if suspended (iOS requires user gesture)
+  if(AC&&AC.state==='suspended')AC.resume();
+  return AC;
+}
+function _tone(type,freq,dur,vol,delay){
+  const ac=getAC();if(!ac)return;
+  try{
+    const g=ac.createGain();
+    g.gain.setValueAtTime(0.001,ac.currentTime+delay);
+    g.gain.linearRampToValueAtTime(vol,ac.currentTime+delay+0.015);
+    g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+delay+dur);
+    g.connect(ac.destination);
+    const o=ac.createOscillator();o.type=type;
+    o.frequency.setValueAtTime(freq,ac.currentTime+delay);
+    o.connect(g);o.start(ac.currentTime+delay);o.stop(ac.currentTime+delay+dur+0.05);
+  }catch(e){}
+}
+function _slide(f1,f2,dur,vol,type,delay){
+  const ac=getAC();if(!ac)return;
+  try{
+    const g=ac.createGain();
+    g.gain.setValueAtTime(vol,ac.currentTime+delay);
+    g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+delay+dur);
+    g.connect(ac.destination);
+    const o=ac.createOscillator();o.type=type||'sine';
+    o.frequency.setValueAtTime(f1,ac.currentTime+delay);
+    o.frequency.exponentialRampToValueAtTime(f2,ac.currentTime+delay+dur);
+    o.connect(g);o.start(ac.currentTime+delay);o.stop(ac.currentTime+delay+dur+0.05);
+  }catch(e){}
+}
+function _noise(dur,vol,freq,delay){
+  const ac=getAC();if(!ac)return;
+  try{
+    const buf=ac.createBuffer(1,Math.floor(ac.sampleRate*dur),ac.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1);
+    const s=ac.createBufferSource();s.buffer=buf;
+    const f=ac.createBiquadFilter();f.type='bandpass';f.frequency.value=freq||800;f.Q.value=1.2;
+    const g=ac.createGain();g.gain.setValueAtTime(vol,ac.currentTime+(delay||0));
+    g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+(delay||0)+dur);
+    s.connect(f);f.connect(g);g.connect(ac.destination);
+    s.start(ac.currentTime+(delay||0));s.stop(ac.currentTime+(delay||0)+dur+0.05);
+  }catch(e){}
+}
+
+const SFX={
+  egg:()=>{
+    // Bright sparkle ding
+    _tone('sine',880,0.07,0.25,0);
+    _tone('sine',1320,0.09,0.12,0.06);
+    _tone('sine',1760,0.12,0.15,0.12);
+  },
+  correct:()=>{
+    // Victory fanfare
+    _tone('square',523,0.09,0.22,0);
+    _tone('square',659,0.09,0.22,0.1);
+    _tone('square',784,0.09,0.22,0.2);
+    _tone('square',1047,0.22,0.28,0.3);
+    _tone('sine',1319,0.15,0.2,0.52);
+  },
+  wrong:()=>{
+    _slide(200,80,0.25,0.3,'sawtooth',0);
+    _noise(0.15,0.2,200,0.05);
+  },
+  jump:()=>{
+    _slide(260,520,0.1,0.18,'sine',0);
+  },
+  stomp:()=>{
+    _noise(0.07,0.45,400,0);
+    _slide(380,80,0.18,0.28,'square',0.04);
+  },
+  hurt:()=>{
+    _slide(320,90,0.28,0.38,'sawtooth',0);
+    _noise(0.12,0.3,300,0.05);
+  },
+  win:()=>{
+    [523,659,784,1047,1319,1568].forEach((n,i)=>_tone('square',n,0.16,0.26,i*0.1));
+  },
+  fact:()=>{
+    // Magical discovery chime
+    _tone('sine',440,0.07,0.18,0);
+    _tone('sine',554,0.07,0.18,0.08);
+    _tone('sine',659,0.07,0.18,0.16);
+    _tone('sine',880,0.14,0.28,0.24);
+    _tone('triangle',1320,0.1,0.2,0.36);
+  },
+  checkpoint:()=>{
+    _tone('sine',660,0.07,0.12,0);
+    _tone('sine',880,0.1,0.18,0.1);
+  },
+  // 🐐 SIUUUU — El grito de Cristiano Ronaldo
+  siuu:()=>{
+    const ac=getAC();if(!ac)return;
+    try{
+      // Phase 1: rising "SI" — quick upward scream 0.0-0.3s
+      _slide(250,900,0.28,0.28,'sine',0);
+      _slide(375,1350,0.28,0.12,'triangle',0);  // harmonic
+      _slide(500,1800,0.28,0.06,'sine',0);       // upper harmonic
+      // Phase 2: the held "UUUUUU" — sustained high scream 0.28-1.1s
+      _tone('sine',920,0.82,0.32,0.28);
+      _tone('triangle',460,0.82,0.18,0.28);
+      _tone('sine',1840,0.82,0.08,0.28);  // bright top
+      // Vibrato on the sustained note
+      const ac2=getAC();
+      const vib=ac2.createOscillator();vib.frequency.value=6;
+      const vibGain=ac2.createGain();vibGain.gain.value=18;
+      const carrier=ac2.createOscillator();carrier.frequency.value=920;
+      const env=ac2.createGain();
+      env.gain.setValueAtTime(0.28,ac2.currentTime+0.28);
+      env.gain.exponentialRampToValueAtTime(0.001,ac2.currentTime+1.12);
+      vib.connect(vibGain);vibGain.connect(carrier.frequency);
+      carrier.connect(env);env.connect(ac2.destination);
+      vib.start(ac2.currentTime+0.28);carrier.start(ac2.currentTime+0.28);
+      vib.stop(ac2.currentTime+1.15);carrier.stop(ac2.currentTime+1.15);
+      // Phase 3: crowd roar under it all
+      const buf=ac.createBuffer(1,Math.floor(ac.sampleRate*0.9),ac.sampleRate);
+      const dat=buf.getChannelData(0);
+      for(let i=0;i<dat.length;i++){
+        const env2=i<dat.length*0.15?i/(dat.length*0.15):Math.max(0,1-(i-dat.length*0.15)/(dat.length*0.85));
+        dat[i]=(Math.random()*2-1)*env2;
+      }
+      const src=ac.createBufferSource();src.buffer=buf;
+      const filt=ac.createBiquadFilter();filt.type='lowpass';filt.frequency.value=700;filt.Q.value=1;
+      const g2=ac.createGain();g2.gain.value=0.14;
+      src.connect(filt);filt.connect(g2);g2.connect(ac.destination);
+      src.start(ac.currentTime+0.25);src.stop(ac.currentTime+1.18);
+    }catch(e){}
+  },
+};
+
+// ─── PERSONALIZACIÓN DEL DINO ⚽ ────────────────────────────
+const DINO_COLORS=[
+  {id:'green',  name:'Clásico',     body:'#5acc5a', belly:'#8aee8a', dark:'#3a9a34', darker:'#2a7a24', tail:'#4aaa44'},
+  {id:'arg',    name:'Argentina',   body:'#5ab4f0', belly:'#ffffff', dark:'#2a84c0', darker:'#1a6aa0', tail:'#3a94d0'},
+  {id:'bra',    name:'Brasil',      body:'#ffd54a', belly:'#4ac24a', dark:'#e0b020', darker:'#c09000', tail:'#f0c020'},
+  {id:'fra',    name:'Francia',     body:'#5a7af0', belly:'#ffffff', dark:'#3050c0', darker:'#2040a0', tail:'#4060d0'},
+  {id:'por',    name:'Portugal',    body:'#cc3333', belly:'#2a7a2a', dark:'#a01818', darker:'#801010', tail:'#b82828'},
+  {id:'esp',    name:'España',      body:'#e03030', belly:'#ffd54a', dark:'#b01818', darker:'#901010', tail:'#c82828'},
+  {id:'ger',    name:'Alemania',    body:'#2a2a2a', belly:'#ff3333', dark:'#1a1a1a', darker:'#0a0a0a', tail:'#3a3a3a'},
+  {id:'ita',    name:'Italia',      body:'#3a9adf', belly:'#ffffff', dark:'#1a6aaf', darker:'#0a5a9f', tail:'#2a8acf'},
+  {id:'pink',   name:'Rosado',      body:'#ff8acc', belly:'#ffd0ec', dark:'#cc5a9c', darker:'#aa3a7c', tail:'#ee7abc'},
+  {id:'gold',   name:'Dorado',      body:'#ffd700', belly:'#fff4b0', dark:'#cca800', darker:'#aa8800', tail:'#eec700'},
+];
+
+const DINO_ACCESSORIES=[
+  {id:'none',     name:'Ninguno',         emoji:'❌',  cat:'head'},
+  {id:'captain',  name:'Banda Capitán',   emoji:'🎗️', cat:'arm'},
+  {id:'cleats',   name:'Botines',         emoji:'👟', cat:'feet'},
+  {id:'crown',    name:'Corona Campeón',  emoji:'👑', cat:'head'},
+  {id:'goggles',  name:'Lentes Pro',      emoji:'🕶️', cat:'head'},
+  {id:'scarf',    name:'Bufanda Fan',     emoji:'🧣', cat:'neck'},
+  {id:'star',     name:'Estrella Crack',  emoji:'⭐', cat:'chest'},
+  {id:'cape',     name:'Capa de Héroe',   emoji:'🦸', cat:'back'},
+];
+
+let dinoCustom={color:'green', accessories:[]}; // hasta 2 accesorios simultáneos
+function saveCustom(){try{localStorage.setItem('dia_custom',JSON.stringify(dinoCustom));}catch(e){}}
+function loadCustom(){try{const d=localStorage.getItem('dia_custom');if(d)dinoCustom=JSON.parse(d);}catch(e){}}
+loadCustom();
+
+function getDinoColor(){
+  return DINO_COLORS.find(c=>c.id===dinoCustom.color)||DINO_COLORS[0];
+}
+function hasAccessory(id){return dinoCustom.accessories.includes(id);}
+function toggleAccessory(id){
+  if(id==='none'){dinoCustom.accessories=[];saveCustom();renderCustomScreen();return;}
+  const idx=dinoCustom.accessories.indexOf(id);
+  if(idx>=0){dinoCustom.accessories.splice(idx,1);}
+  else{
+    if(dinoCustom.accessories.length>=2)dinoCustom.accessories.shift(); // máximo 2 a la vez
+    dinoCustom.accessories.push(id);
+  }
+  saveCustom();
+  renderCustomScreen();
+}
+function chooseColor(id){
+  dinoCustom.color=id;
+  saveCustom();
+  renderCustomScreen();
+}
+
+function showCustomScreen(){
+  hideAll();hide('ui');hide('c');
+  show('custom-scr');
+  renderCustomScreen();
+}
+
+function renderCustomScreen(){
+  const colorGrid=document.getElementById('custom-colors');
+  colorGrid.innerHTML='';
+  DINO_COLORS.forEach(c=>{
+    const sel=c.id===dinoCustom.color;
+    const sw=document.createElement('div');
+    sw.style.cssText=`width:48px;height:48px;border-radius:50%;background:${c.body};border:3px solid ${sel?'#ffe066':'rgba(255,255,255,0.3)'};cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:${sel?'0 0 14px rgba(255,220,50,0.7)':'none'};transition:transform 0.15s;flex-shrink:0;`;
+    sw.title=c.name;
+    sw.onclick=()=>chooseColor(c.id);
+    if(sel){const chk=document.createElement('div');chk.textContent='✓';chk.style.cssText='color:#fff;font-weight:900;font-size:20px;text-shadow:0 1px 2px rgba(0,0,0,0.6);';sw.appendChild(chk);}
+    colorGrid.appendChild(sw);
+  });
+
+  const accGrid=document.getElementById('custom-accessories');
+  accGrid.innerHTML='';
+  DINO_ACCESSORIES.forEach(a=>{
+    const sel=a.id==='none'?dinoCustom.accessories.length===0:hasAccessory(a.id);
+    const card=document.createElement('div');
+    card.style.cssText=`background:${sel?'rgba(255,220,50,0.18)':'rgba(255,255,255,0.07)'};border:2px solid ${sel?'#ffe066':'rgba(255,255,255,0.2)'};border-radius:12px;padding:10px 6px;text-align:center;cursor:pointer;transition:transform 0.12s;`;
+    card.innerHTML=`<div style="font-size:26px;">${a.emoji}</div><div style="font-size:10px;color:#fff;font-weight:700;margin-top:2px;font-family:Nunito,sans-serif;">${a.name}</div>`;
+    card.onclick=()=>toggleAccessory(a.id);
+    accGrid.appendChild(card);
+  });
+
+  drawCustomPreview();
+}
+
+let customPreviewT=0, customPreviewRaf=null;
+function drawCustomPreview(){
+  const canvas=document.getElementById('custom-preview-canvas');
+  if(!canvas)return;
+  const ctx2=canvas.getContext('2d');
+  const W=canvas.width=canvas.clientWidth*2;
+  const H=canvas.height=canvas.clientHeight*2;
+  function frame(){
+    customPreviewT+=0.02;
+    ctx2.clearRect(0,0,W,H);
+    drawDinoSprite(ctx2,W/2,H*0.62,W*0.09,{dir:1,state:'idle',animF:Math.floor(customPreviewT*4)%4,bobT:customPreviewT},getDinoColor(),dinoCustom.accessories);
+    const scr=document.getElementById('custom-scr');
+    if(scr&&scr.style.display!=='none'){
+      customPreviewRaf=requestAnimationFrame(frame);
+    }
+  }
+  if(customPreviewRaf)cancelAnimationFrame(customPreviewRaf);
+  frame();
+}
+
+// ─── DIFFICULTY ────────────────────────────────────────────
+let DIFF='normal'; // 'easy' | 'normal' | 'hard'
+const DIFF_CFG={
+  easy:  {lives:5, enemySpeedMult:0.6, platformWidthMult:1.3, jumpV:-620, playerSpeed:200, label:'🐣 FÁCIL'},
+  normal:{lives:3, enemySpeedMult:1.0, platformWidthMult:1.0, jumpV:-580, playerSpeed:210, label:'🦕 NORMAL'},
+  hard:  {lives:2, enemySpeedMult:1.5, platformWidthMult:0.75,jumpV:-560, playerSpeed:230, label:'🦖 DIFÍCIL'},
+};
+function showDiffSelect(){stopGame();hideAll();hide('ui');hide('c');show('diff-scr');}
+function chooseDiff(d){DIFF=d;hide('diff-scr');hide('c');hide('ui');showWorldSelect();}
+
+// ─── PROGRESS ──────────────────────────────────────────────
+let prog={unlocked:1,stars:{}};
+function saveProg(){try{localStorage.setItem('dia_v2',JSON.stringify(prog));}catch(e){}}
+function loadProg(){try{const d=localStorage.getItem('dia_v2');if(d)prog=JSON.parse(d);}catch(e){}}
+loadProg();
+
+// ─── SCREEN HELPERS ────────────────────────────────────────
+function show(id){document.getElementById(id).style.display='flex';}
+function hide(id){document.getElementById(id).style.display='none';}
+function hideAll(){
+  ['start-scr','world-scr','diff-scr','dev-scr','fact-scr','challenge-scr','complete-scr','gameover-scr','pause-scr','boss-win-scr','custom-scr'].forEach(hide);
+  const bscr=document.getElementById('boss-scr');
+  if(bscr)bscr.style.display='none';
+}
+
+function showWorldSelect(){
+  hideAll(); stopGame();
+  hide('ui'); hide('c');
+  show('world-scr');
+  buildGrid();
+}
+function showStart(){hideAll();stopGame();hide('ui');hide('c');show('start-scr');}
+
+function buildGrid(){
+  const WORLDS=[
+    {id:0,name:"Bosque Jurásico",emoji:"🌿",lvls:[0,1]},
+    {id:1,name:"Río & Rocas",emoji:"⛰️",lvls:[2,3]},
+    {id:2,name:"Lava & Castillo",emoji:"🌋",lvls:[4,5]},
+    {id:3,name:"¡Batalla Dino!",emoji:"⚔️",lvls:[6,7]},
+    {id:4,name:"Count Master",emoji:"🔢",lvls:[8,9]},
+  ];
+  const g=document.getElementById('world-grid');g.innerHTML='';
+  WORLDS.forEach(w=>{
+    const hdr=document.createElement('div');
+    hdr.style='grid-column:1/-1;color:#ffe066;font-size:13px;font-weight:900;padding:6px 4px 2px;border-bottom:1px solid rgba(255,220,50,0.3);';
+    hdr.textContent=`${w.emoji} ${w.name}`;
+    g.appendChild(hdr);
+    w.lvls.forEach(li=>{
+      const unlocked=li<prog.unlocked;
+      const stars=prog.stars[li]||0;
+      const d=document.createElement('div');
+      d.className='wcard '+(unlocked?'on':'off');
+      d.innerHTML=`<div class="we">${LEVELS[li].emoji}</div><div class="wn">${LEVELS[li].name}</div><div class="ws">${stars>0?'⭐'.repeat(stars):'☆☆☆'}</div>${unlocked?'':'<span style="position:absolute;top:5px;right:7px;font-size:12px;">🔒</span>'}`;
+      if(unlocked)d.onclick=()=>startLevel(li);
+      g.appendChild(d);
+    });
+  });
+}
+
+// ─── DINO FACTS ────────────────────────────────────────────
+let factIdx=0,factFromGame=false;
+function showFactMenu(){factFromGame=false;factIdx=rnd(0,FACTS.length-1);renderFact();}
+function showFactGame(idx){factFromGame=true;factIdx=idx;renderFact();}
+function renderFact(){
+  const f=FACTS[factIdx];
+  document.getElementById('fn').textContent=f.n;
+  document.getElementById('fe').textContent=f.e;
+  document.getElementById('ft').textContent=f.t;
+  document.getElementById('fd').textContent=f.d;
+  // Only hide game screens — never hide canvas/ui when coming from in-game
+  ['start-scr','world-scr','challenge-scr','complete-scr','gameover-scr','pause-scr'].forEach(hide);
+  if(!factFromGame){hide('ui');hide('c');}
+  show('fact-scr');
+}
+function nextFact(){factIdx=(factIdx+1)%FACTS.length;renderFact();}
+function factBack(){
+  hide('fact-scr');
+  if(factFromGame){
+    GS.factActive=false;
+    document.getElementById('c').style.display='block';
+    document.getElementById('ui').style.display='block';
+    resumeGame();
+  } else {
+    show('start-scr');
+  }
+}
+
+// ─── CANVAS + SCALE ────────────────────────────────────────
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+let SW=0,SH=0;  // screen pixels
+let SX=1,SY=1;  // scale factors: game coords → screen pixels
+
+function resizeCanvas(){
+  SW=canvas.width=window.innerWidth;
+  SH=canvas.height=window.innerHeight;
+  // Scale game world (800x450) to fill screen properly
+  // For landscape: scale to fit height, center horizontally if needed
+  // For portrait: scale by width (game will be letterboxed)
+  const scaleByW = SW/GW;
+  const scaleByH = SH/GH;
+  // Use the smaller scale so entire game fits
+  const uniformScale = Math.min(scaleByW, scaleByH);
+  SX=uniformScale;
+  SY=uniformScale;
+  // Offset to center the game world if there's extra space
+  canvas._offX = (SW - GW*SX)/2;
+  canvas._offY = (SH - GH*SY)/2;
+}
+window.addEventListener('resize',()=>{resizeCanvas();if(GS.running)renderFrame();});
+resizeCanvas();
+
+// Convert game coords to screen coords (with centering offset)
+function gx(x){return (x-GS.camX)*SX + (canvas._offX||0);}
+function gy(y){return y*SY + (canvas._offY||0);}
+function gs(v){return v*SX;}  // scale a size value
+
+// ─── INPUT ─────────────────────────────────────────────────
+const IN={left:false,right:false,jump:false,jumpPrev:false};
+
+// iOS AudioContext unlock on first touch
+document.addEventListener('touchstart', ()=>{const ac=getAC();if(ac&&ac.state==='suspended')ac.resume();}, {once:true});
+document.addEventListener('mousedown', ()=>{const ac=getAC();if(ac&&ac.state==='suspended')ac.resume();}, {once:true});
+
+function setupControls(){
+  // Usa Pointer Events: unifica touch+mouse+pen en UN solo modelo de eventos,
+  // eliminando el bug clásico de iOS donde touch dispara eventos mouse
+  // "fantasma" 300ms después, dejando el input atascado en true/false.
+  // Cada botón rastrea su propio pointerId activo para evitar confusiones
+  // cuando el usuario toca con varios dedos rápidamente.
+  function bind(id,key){
+    const el=document.getElementById(id);
+    if(!el)return;
+    let activePointerId=null;
+
+    const setOn=(e)=>{
+      e.preventDefault();
+      if(activePointerId===null){
+        activePointerId=e.pointerId;
+        IN[key]=true;
+        try{el.setPointerCapture(e.pointerId);}catch(err){}
+      }
+    };
+    const setOff=(e)=>{
+      e.preventDefault();
+      if(activePointerId===e.pointerId){
+        activePointerId=null;
+        IN[key]=false;
+      }
+    };
+
+    el.addEventListener('pointerdown', setOn, {passive:false});
+    el.addEventListener('pointerup',   setOff, {passive:false});
+    el.addEventListener('pointercancel', setOff, {passive:false});
+    el.addEventListener('pointerleave', setOff, {passive:false});
+    // Bloquea el menú contextual / selección al mantener presionado
+    el.addEventListener('contextmenu', e=>e.preventDefault());
+  }
+  bind('ctrl-left','left');
+  bind('ctrl-right','right');
+  bind('ctrl-jump','jump');
+}
+setupControls();
+
+// Salvaguarda: si se pierde el foco de la ventana (cambio de app, etc.),
+// resetea todos los inputs para evitar que queden "atascados" en true
+function resetAllInputs(){
+  IN.left=false; IN.right=false; IN.jump=false;
+}
+window.addEventListener('blur', resetAllInputs);
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) resetAllInputs();
+});
+
+window.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft'||e.key==='a')IN.left=true;
+  if(e.key==='ArrowRight'||e.key==='d')IN.right=true;
+  if(e.key==='ArrowUp'||e.key===' '||e.key==='w')IN.jump=true;
+  if(e.key==='Escape'&&GS.running&&!GS.won)pauseGame();
+  e.preventDefault();
+});
+window.addEventListener('keyup',e=>{
+  if(e.key==='ArrowLeft'||e.key==='a')IN.left=false;
+  if(e.key==='ArrowRight'||e.key==='d')IN.right=false;
+  if(e.key==='ArrowUp'||e.key===' '||e.key==='w')IN.jump=false;
+});
+
+// ─── GAME STATE ────────────────────────────────────────────
+let GS={running:false};
+let rafId=null,lastT=0;
+let curLevel=0;
+
+function stopGame(){
+  GS.running=false;
+  if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+}
+
+function startLevel(idx){
+  curLevel=idx;
+  hideAll();
+  document.getElementById('c').style.display='block';
+  document.getElementById('ui').style.display='block';
+  resizeCanvas();
+  initLevel(idx);
+  stopGame();
+  GS.running=true;
+  lastT=performance.now();
+  rafId=requestAnimationFrame(tick);
+}
+
+function initLevel(idx){
+  const L=LEVELS[idx];
+  // Clone platforms with runtime state
+  const diffCfg=DIFF_CFG[DIFF];
+  const platforms=L.platforms.map(p=>{
+    // Easy mode: widen small platforms
+    let w=p.w;
+    if(p.h<=20&&DIFF!=='normal'){w=Math.round(p.w*diffCfg.platformWidthMult);}
+    return {...p,w,ox:p.x,active:true,timer:0,moveDir:1,moveOff:0};
+  });
+  const eggs=L.eggs.map(e=>({...e,got:false,bob:Math.random()*Math.PI*2}));
+  const cfg=DIFF_CFG[DIFF];
+  const enemies=L.enemies.map(e=>({...e,startX:e.x,dir:1,stunned:0,bobY:0,speedMult:cfg.enemySpeedMult}));
+  const rocks=(L.fallingRocks||[]).map(r=>({...r,ry:-50,active:false,rtimer:0}));
+  const countGates=(L.countGates||[]).map(g=>({...g,done:false,active:false,floatY:0}));
+  const particles=[];
+  const floats=[];
+
+  GS={
+    running:true,paused:false,won:false,
+    level:idx,L,
+    camX:0,
+    lives:DIFF_CFG[DIFF].lives,
+    platforms,eggs,enemies,rocks,particles,floats,
+    player:{x:80,y:260,vx:0,vy:0,w:34,h:44,
+      onGround:false,dir:1,state:'idle',
+      animF:0,animT:0,invin:0},
+    chalDone:false,chalActive:false,chalData:null,
+    factDone:false,factActive:false,
+    bossDone:false,
+    dead:false,deadT:0,
+    // checkpoint
+    cpX:80,cpY:GROUND_Y-120,cpIdx:-1,
+    t:0,
+  };
+  updateHUD();
+}
+
+function restartLevel(){hideAll();startLevel(curLevel);}
+function pauseGame(){
+  if(!GS.running||GS.won||GS.dead)return;
+  GS.paused=true;
+  const pdi=document.getElementById('pause-diff-info');
+  if(pdi)pdi.textContent=DIFF_CFG[DIFF].label+' · Nivel '+(GS.level+1);
+  show('pause-scr');
+}
+function resumeGame(){
+  hide('pause-scr');
+  GS.paused=false;
+  GS.factActive=false;
+  lastT=performance.now();
+  if(!rafId&&GS.running){rafId=requestAnimationFrame(tick);}
+}
+
+// ─── GAME LOOP ─────────────────────────────────────────────
+function tick(now){
+  if(!GS.running){rafId=null;return;}
+  if(GS.paused||GS.factActive){rafId=requestAnimationFrame(tick);return;}
+  const dt=Math.min((now-lastT)/1000,0.05);
+  lastT=now;
+  update(dt);
+  renderFrame();
+  rafId=requestAnimationFrame(tick);
+}
+
+// ─── PHYSICS CONSTANTS ─────────────────────────────────────
+const GRAV=1600, FRIC=0.72;
+let JUMP_V=-580, SPD=210; // overridden by difficulty
+
+// ─── UPDATE ────────────────────────────────────────────────
+function update(dt){
+  if(GS.chalActive)return;
+  const P=GS.player;
+  // Apply difficulty physics
+  JUMP_V=DIFF_CFG[DIFF].jumpV;
+  SPD=DIFF_CFG[DIFF].playerSpeed;
+
+  if(GS.dead){
+    GS.deadT-=dt;
+    if(GS.deadT<=0){
+      GS.dead=false;
+      P.x=GS.cpX;P.y=GS.cpY;
+      P.vx=0;P.vy=0;P.invin=1.5;
+    }
+    return;
+  }
+
+  GS.t+=dt;
+
+  // ── Input
+  const goL=IN.left,goR=IN.right;
+  const jumpNow=IN.jump&&!IN.jumpPrev;
+  IN.jumpPrev=IN.jump;
+
+  if(goL){P.vx=-SPD;P.dir=-1;}
+  else if(goR){P.vx=SPD;P.dir=1;}
+  else{P.vx*=FRIC;if(Math.abs(P.vx)<8)P.vx=0;}
+
+  if(jumpNow&&P.onGround){P.vy=JUMP_V;P.state='jump';SFX.jump();}
+
+  // ── Gravity
+  P.vy+=GRAV*dt;
+  P.y+=P.vy*dt;
+  P.x+=P.vx*dt;
+
+  // ── Platform updates
+  GS.platforms.forEach(pl=>{
+    if(pl.move&&pl.range>0){
+      pl.moveOff+=pl.speed*(pl.moveDir)*60*dt;
+      if(Math.abs(pl.moveOff)>=pl.range)pl.moveDir*=-1;
+      pl.x=pl.ox+pl.moveOff;
+    }
+    if(pl.timed){
+      pl.timer+=dt*1000;
+      const cyc=pl.onTime+pl.offTime;
+      pl.active=(pl.timer%cyc)<pl.onTime;
+    } else {pl.active=true;}
+  });
+
+  // ── Falling rocks
+  GS.rocks.forEach(r=>{
+    r.rtimer+=dt*1000;
+    if(r.rtimer>=r.interval){r.rtimer=0;r.ry=-50;r.active=true;}
+    if(r.active){
+      r.ry+=220*dt;
+      if(r.ry>GH+40)r.active=false;
+      if(P.invin<=0&&Math.abs(r.x-(P.x+P.w/2))<22&&r.ry>P.y&&r.ry<P.y+P.h){hurtP();}
+    }
+  });
+
+  // ── Platform collision
+  P.onGround=false;
+  GS.platforms.forEach(pl=>{
+    if(!pl.active)return;
+    const px=pl.x,py=pl.y,pw=pl.w,ph=pl.h;
+    // Vertical: landing on top
+    if(P.x+P.w-4>px&&P.x+4<px+pw){
+      if(P.vy>=0&&P.y+P.h>py&&P.y+P.h<=py+Math.min(ph,30)){
+        P.y=py-P.h;P.vy=0;P.onGround=true;
+      }
+    }
+    // Vertical: hitting bottom of platform
+    if(P.x+P.w-4>px&&P.x+4<px+pw){
+      if(P.vy<0&&P.y<py+ph&&P.y>=py+ph-10&&ph>20){
+        P.y=py+ph;P.vy=0;
+      }
+    }
+    // Horizontal: wall collision (only tall platforms)
+    if(ph>20){
+      if(P.y+P.h-6>py&&P.y+6<py+ph){
+        if(P.x+P.w>px&&P.x+P.w<px+18&&P.vx>0){P.x=px-P.w;P.vx=0;}
+        if(P.x<px+pw&&P.x>px+pw-18&&P.vx<0){P.x=px+pw;P.vx=0;}
+      }
+    }
+  });
+
+  // ── Level bounds
+  if(P.x<0){P.x=0;P.vx=0;}
+  if(P.x+P.w>GS.L.width)P.x=GS.L.width-P.w;
+
+  // ── FALL KILL (uses game coords, not screen pixels!)
+  if(P.y>FALL_KILL){hurtP();}
+
+  // ── Lava kill (lava renders at GROUND_Y+120 area, kill same as fall)
+  if(GS.L.lava&&P.y>GROUND_Y+80){hurtP();}
+
+  // ── Invincibility
+  if(P.invin>0)P.invin-=dt;
+
+  // ── Enemies
+  GS.enemies.forEach(e=>{
+    if(e.stunned>0){e.stunned-=dt;return;}
+    e.x+=e.dir*75*(e.speedMult||1)*dt;
+    if(e.x>e.startX+e.range||e.x<e.startX-e.range)e.dir*=-1;
+    e.bobY=Math.sin(GS.t*3+e.startX*0.01)*3;
+    if(P.invin<=0){
+      const ey=e.y+e.bobY;
+      if(P.x+P.w-8>e.x&&P.x+8<e.x+38&&P.y+P.h-4>ey&&P.y+4<ey+32){
+        if(P.vy>50&&P.y+P.h<ey+18){
+          // stomp!
+          e.stunned=60;P.vy=-320;
+          SFX.stomp();
+          addFX(e.x+18,ey,'💥');addPart(e.x+18,ey,'#ffff00');
+        } else {
+          hurtP();
+        }
+      }
+    }
+  });
+
+  // ── Eggs
+  GS.eggs.forEach(egg=>{
+    if(egg.got)return;
+    const ey=egg.y+Math.sin(GS.t*2.5+egg.bob)*5;
+    if(P.x+P.w-4>egg.x&&P.x+4<egg.x+22&&P.y+P.h-4>ey&&P.y+4<ey+22){
+      egg.got=true;
+      SFX.egg();
+      addPart(egg.x+11,ey,'#ffe066');addFX(egg.x+11,ey-12,'⭐');
+      // SIUUU when all eggs collected!
+      const allGot=GS.eggs.every(e=>e.got);
+      if(allGot){setTimeout(()=>{SFX.siuu();addFX(GS.player.x+17,GS.player.y-20,'🐐');},100);}
+      updateHUD();
+    }
+  });
+
+  // ── Checkpoints
+  const cps=GS.L.checkpoints||[];
+  cps.forEach((cp,i)=>{
+    if(i<=GS.cpIdx)return;
+    if(P.x+P.w>cp.x&&P.x<cp.x+40){
+      GS.cpIdx=i;GS.cpX=cp.x;GS.cpY=cp.y;
+      SFX.checkpoint();
+      addFX(cp.x+20,cp.y-20,'✅');
+    }
+  });
+
+  // ── Count Master gates
+  if(GS.countGates){
+    GS.countGates.forEach((g,i)=>{
+      if(g.done)return;
+      g.floatY=Math.sin(GS.t*2+i)*6;
+      if(P.x+P.w>g.x&&P.x<g.x+44){
+        P.x=g.x-P.w;P.vx=0;
+        if(!g.active){g.active=true;openCountGate(g);}
+      }
+    });
+  }
+
+  // ── Dino fact board
+  if(!GS.factDone&&GS.L.dinoFact){
+    const f=GS.L.dinoFact;
+    if(P.x>f.x-30&&P.x<f.x+60){
+      GS.factDone=true;GS.factActive=true;
+      SFX.fact();
+      showFactGame(f.dino);
+    }
+  }
+
+  // ── Challenge gate
+  if(!GS.chalDone&&GS.L.challenge){
+    const c=GS.L.challenge;
+    if(P.x+P.w>c.x&&P.x<c.x+36){
+      P.x=c.x-P.w;P.vx=0;
+      if(!GS.chalActive){GS.chalActive=true;openChallenge(c);}
+    }
+  }
+
+  // ── Boss trigger
+  if(!GS.bossDone&&GS.L.boss&&P.x>GS.L.boss.triggerX){
+    GS.bossDone=true;
+    GS.running=false;
+    P.vx=0;P.vy=0;
+    setTimeout(()=>startBoss(GS.L.boss.id, GS.level),400);
+    return;
+  }
+
+  // ── Win (only if no boss pending)
+  if(P.x>GS.L.endX&&(!GS.L.boss||GS.bossDone)){
+    GS.running=false;GS.won=true;
+    SFX.win();
+    setTimeout(levelDone,200);
+    return;
+  }
+
+  // ── Camera
+  const tgt=P.x-GW*0.3;
+  GS.camX+=(tgt-GS.camX)*0.14;
+  GS.camX=Math.max(0,Math.min(GS.camX,GS.L.width-GW));
+
+  // ── Player animation
+  P.animT+=dt;
+  if(P.animT>0.13){P.animT=0;P.animF=(P.animF+1)%4;}
+  if(!P.onGround)P.state='jump';
+  else if(Math.abs(P.vx)>20)P.state='run';
+  else P.state='idle';
+
+  // ── Particles
+  GS.particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=300*dt;p.life-=dt;});
+  GS.particles=GS.particles.filter(p=>p.life>0);
+  GS.floats.forEach(f=>{f.y-=45*dt;f.life-=dt;f.a=f.life/f.ml;});
+  GS.floats=GS.floats.filter(f=>f.life>0);
+  updateHUD();
+}
+
+function hurtP(){
+  if(GS.dead||GS.player.invin>0)return;
+  GS.lives--;updateHUD();
+  SFX.hurt();
+  addPart(GS.player.x+17,GS.player.y+22,'#ff3333');
+  GS.player.invin=0.1;
+  if(GS.lives<=0){
+    GS.running=false;
+    setTimeout(()=>show('gameover-scr'),700);
+  } else {
+    GS.dead=true;GS.deadT=0.7;
+  }
+}
+
+function addPart(x,y,col){
+  for(let i=0;i<10;i++){
+    const a=Math.random()*Math.PI*2,s=70+Math.random()*130;
+    GS.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-60,life:0.5+Math.random()*0.35,col,sz:3+Math.random()*4});
+  }
+}
+function addFX(x,y,txt){GS.floats.push({x,y,txt,life:0.85,ml:0.85,a:1});}
+
+function updateHUD(){
+  document.getElementById('hud-lives').textContent='❤️'.repeat(Math.max(0,GS.lives||0));
+  document.getElementById('hud-level').textContent=(GS.level||0)+1;
+  const dlabel=document.getElementById('hud-diff-label');
+  if(dlabel)dlabel.textContent={easy:'🐣 FÁCIL',normal:'🦕 NRM',hard:'🦖 HARD'}[DIFF]||'NIVEL';
+  const tot=GS.eggs?GS.eggs.length:0;
+  const got=GS.eggs?GS.eggs.filter(e=>e.got).length:0;
+  document.getElementById('hud-eggs').textContent=`🥚 ${got}/${tot}`;
+}
+
+// ─── COUNT MASTER GATES ────────────────────────────────────
+let activeGate=null;
+function openCountGate(g){
+  activeGate=g;
+  const ans=g.op==='+'?g.num1+g.num2:g.op==='-'?g.num1-g.num2:g.num1*g.num2;
+  // Build choices
+  const choices=new Set([ans]);
+  while(choices.size<4){const v=ans+Math.floor(Math.random()*7)-3;if(v>=0&&v!==ans)choices.add(v);}
+  const ch={q:`${g.num1} ${g.op} ${g.num2} = ?`,correct:ans,choices:[...choices].sort(()=>Math.random()-0.5)};
+  GS.chalData=ch;chalAttempts=0;
+  document.getElementById('ch-title').textContent='🔢 Count Master Gate!';
+  document.getElementById('ch-q').textContent=ch.q;
+  document.getElementById('ch-hint').textContent='';
+  document.getElementById('ch-lives').textContent='❤️'.repeat(GS.lives);
+  const box=document.getElementById('ch-ans');box.innerHTML='';
+  ch.choices.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.className='ans-btn';btn.textContent=c;
+    btn.onclick=()=>answerCountGate(String(c),String(ans),btn,g);
+    box.appendChild(btn);
+  });
+  GS.chalActive=true;
+  show('challenge-scr');
+}
+function answerCountGate(chosen,correct,btn,g){
+  document.querySelectorAll('.ans-btn').forEach(b=>b.disabled=true);
+  if(chosen===correct){
+    btn.style.background='linear-gradient(135deg,#22aa22,#44ff44)';btn.style.borderColor='#44ff44';btn.style.opacity='1';
+    SFX.siuu();
+    document.getElementById('ch-hint').textContent='✅ ¡SIUUUU! ¡Correcto! 🐐';
+    setTimeout(()=>{hide('challenge-scr');GS.chalActive=false;g.done=true;activeGate=null;},700);
+  } else {
+    SFX.wrong();
+    btn.style.background='linear-gradient(135deg,#aa2222,#ff4444)';btn.style.borderColor='#ff4444';btn.style.opacity='1';
+    chalAttempts++;
+    document.getElementById('ch-hint').textContent=chalAttempts>=2?`💡 Era: ${correct}`:' ❌ ¡Intenta de nuevo!';
+    setTimeout(()=>{
+      if(chalAttempts>=2){hide('challenge-scr');GS.chalActive=false;g.done=true;activeGate=null;}
+      else{document.querySelectorAll('.ans-btn').forEach(b=>{b.disabled=false;b.classList.remove('no','ok');});}
+    },1000);
+  }
+}
+
+// ─── CHALLENGE ─────────────────────────────────────────────
+let chalAttempts=0;
+function openChallenge(cfg){
+  const d=genCh(cfg.type,cfg.op);
+  GS.chalData=d;chalAttempts=0;
+  document.getElementById('ch-title').textContent=`🚪 ${cfg.label||'Desafío'}`;
+  document.getElementById('ch-q').textContent=d.q;
+  document.getElementById('ch-hint').textContent='';
+  document.getElementById('ch-lives').textContent='❤️'.repeat(GS.lives);
+  const box=document.getElementById('ch-ans');box.innerHTML='';
+  d.choices.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.className='ans-btn';btn.textContent=c;
+    btn.onclick=()=>answerCh(String(c),String(d.correct),btn);
+    box.appendChild(btn);
+  });
+  show('challenge-scr');
+}
+function answerCh(chosen,correct,btn){
+  document.querySelectorAll('.ans-btn').forEach(b=>b.disabled=true);
+  if(chosen===correct){
+    btn.style.background='linear-gradient(135deg,#22aa22,#44ff44)';btn.style.borderColor='#44ff44';btn.style.opacity='1';
+    SFX.siuu();document.getElementById('ch-hint').textContent='✅ ¡Correcto! ¡SIUUUU! 🐐';
+    setTimeout(()=>{hide('challenge-scr');GS.chalActive=false;GS.chalDone=true;},700);
+  } else {
+    btn.style.background='linear-gradient(135deg,#aa2222,#ff4444)';btn.style.borderColor='#ff4444';btn.style.opacity='1';
+    chalAttempts++;
+    SFX.wrong();document.getElementById('ch-hint').textContent=chalAttempts>=2?`💡 La respuesta es: ${correct}`:'❌ ¡Intenta de nuevo!';
+    setTimeout(()=>{
+      if(chalAttempts>=2){
+        hide('challenge-scr');GS.chalActive=false;GS.chalDone=true;
+      } else {
+        document.querySelectorAll('.ans-btn').forEach(b=>{b.disabled=false;b.classList.remove('no','ok');});
+      }
+    },1100);
+  }
+}
+
+// ─── LEVEL COMPLETE ────────────────────────────────────────
+function levelDone(){
+  const got=GS.eggs.filter(e=>e.got).length;
+  const tot=GS.eggs.length;
+  let stars=1;
+  if(got>=Math.ceil(tot*0.5))stars=2;
+  if(got>=tot)stars=3;
+  if(!prog.stars[curLevel]||prog.stars[curLevel]<stars)prog.stars[curLevel]=stars;
+  if(curLevel+1>prog.unlocked)prog.unlocked=Math.min(curLevel+1,LEVELS.length);
+  saveProg();
+  document.getElementById('compl-msg').textContent=curLevel===LEVELS.length-1?'🏆 ¡JUEGO COMPLETADO!':'🎉 ¡NIVEL COMPLETADO! 🎉';
+  document.getElementById('compl-stars').textContent='⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  document.getElementById('compl-detail').textContent=`🥚 ${got}/${tot} huevos · ⭐ ${stars}/3 estrellas`;
+  const nb=document.getElementById('next-lvl-btn');
+  if(curLevel<LEVELS.length-1){nb.style.display='';nb.onclick=()=>startLevel(curLevel+1);}
+  else nb.style.display='none';
+  show('complete-scr');
+}
+
+// ─── RENDER ────────────────────────────────────────────────
+function renderFrame(){
+  if(!GS.L)return;
+  const L=GS.L;
+  ctx.clearRect(0,0,SW,SH);
+
+  // Sky
+  const skGr=ctx.createLinearGradient(0,0,0,SH);
+  skGr.addColorStop(0,L.sky[0]);skGr.addColorStop(1,L.sky[1]);
+  ctx.fillStyle=skGr;ctx.fillRect(0,0,SW,SH);
+
+  // Stars — twinkling
+  for(let i=0;i<40;i++){
+    const twinkle=0.4+0.6*Math.abs(Math.sin(GS.t*1.5+i*0.7));
+    ctx.fillStyle=`rgba(255,255,255,${twinkle*0.85})`;
+    const sx=(((i*137+83)%(L.width))-(GS.camX*0.15)) * SX % SW;
+    const sy=((i*97+41)%130+8)*SY/4;
+    const ss=i%5===0?2.5:1.5;
+    if(sx>0&&sx<SW){ctx.fillRect(sx,sy,ss,ss);}
+  }
+
+  // Far mountains (parallax 0.2) — layered with gradient
+  for(let layer=0;layer<2;layer++){
+    const alpha=layer===0?0.5:0.8;
+    const heightMult=layer===0?0.7:1;
+    const speedP=layer===0?0.15:0.25;
+    ctx.fillStyle=layer===0?(L.bg2||'#1a3a1a'):(L.bg1||'#0d2b0d');
+    ctx.globalAlpha=alpha;
+    for(let i=0;i<12;i++){
+      const mx=gx((i*320+layer*160)%(L.width+300));
+      const mh=(70+Math.sin(i*1.9+layer)*55)*SY*heightMult;
+      const mw=(200+Math.sin(i*0.8)*60)*SX;
+      ctx.beginPath();ctx.moveTo(mx,gy(GROUND_Y));
+      ctx.lineTo(mx+mw/2,gy(GROUND_Y)-mh);ctx.lineTo(mx+mw,gy(GROUND_Y));ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  // Mid-layer trees/crystals/pillars depending on world
+  const worldStyle=GS.L.countMaster?'crystal':GS.L.lava?'rock':GS.L.water?'coral':'tree';
+  ctx.globalAlpha=0.55;
+  for(let i=0;i<20;i++){
+    const tx=((i*290+70)%(L.width+200)-GS.camX*0.45)*SX+(canvas._offX||0);
+    if(tx<-60||tx>SW+60)continue;
+    const th=(50+Math.sin(i*2.3)*30)*SY;
+    const ty=gy(GROUND_Y)-th;
+    if(worldStyle==='tree'){
+      ctx.fillStyle='#1a4a1a';
+      ctx.fillRect(tx-3*SX,ty+th*0.4,6*SX,th*0.6);
+      ctx.fillStyle='#2a7a2a';
+      ctx.beginPath();ctx.arc(tx,ty+th*0.2,18*SX,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(tx,ty,14*SX,0,Math.PI*2);ctx.fill();
+    } else if(worldStyle==='crystal'){
+      ctx.fillStyle=`hsl(${260+i*15},60%,40%)`;
+      ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx-10*SX,ty+th);ctx.lineTo(tx+10*SX,ty+th);ctx.fill();
+      ctx.fillStyle=`hsl(${260+i*15},60%,65%)`;
+      ctx.beginPath();ctx.moveTo(tx,ty+4*SY);ctx.lineTo(tx-6*SX,ty+th*0.4);ctx.lineTo(tx+6*SX,ty+th*0.4);ctx.fill();
+    } else if(worldStyle==='rock'){
+      ctx.fillStyle='#4a2a10';
+      ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx-15*SX,ty+th);ctx.lineTo(tx+15*SX,ty+th);ctx.fill();
+    } else if(worldStyle==='coral'){
+      ctx.fillStyle='#1a4a6a';
+      ctx.fillRect(tx-4*SX,ty,8*SX,th);
+      ctx.beginPath();ctx.arc(tx,ty+th*0.3,12*SX,0,Math.PI*2);ctx.fill();
+    }
+  }
+  ctx.globalAlpha=1;
+
+  // Water / Lava fill below ground
+  if(L.water){
+    const wGr=ctx.createLinearGradient(0,gy(GROUND_Y),0,SH);
+    wGr.addColorStop(0,'#1a5090');wGr.addColorStop(1,'#0a2060');
+    ctx.fillStyle=wGr;ctx.fillRect(0,gy(GROUND_Y),SW,SH);
+    // shimmer
+    ctx.fillStyle=`rgba(100,180,255,${0.15+Math.sin(GS.t*2)*0.08})`;
+    ctx.fillRect(0,gy(GROUND_Y),SW,8*SY);
+  }
+  if(L.lava){
+    const lGr=ctx.createLinearGradient(0,gy(GROUND_Y),0,SH);
+    lGr.addColorStop(0,'#ff5500');lGr.addColorStop(1,'#cc1100');
+    ctx.fillStyle=lGr;ctx.fillRect(0,gy(GROUND_Y),SW,SH);
+    ctx.fillStyle=`rgba(255,180,0,${0.2+Math.sin(GS.t*3)*0.1})`;
+    ctx.fillRect(0,gy(GROUND_Y),SW,10*SY);
+  }
+
+  // ── Platforms
+  GS.platforms.forEach(pl=>{
+    const px=gx(pl.x),py=gy(pl.y),pw=gs(pl.w),ph=gs(pl.h);
+    if(px+pw<0||px>SW)return;
+    if(!pl.active){
+      ctx.fillStyle='rgba(150,100,220,0.25)';
+      ctx.fillRect(px,py,pw,4*SY);
+      return;
+    }
+    const isSmall=pl.h<=20;
+    if(isSmall){
+      const pCol=pl.timed?'#c07030':L.countMaster?'#5a30aa':'#3a7a2a';
+      const pTop=pl.timed?'#ffcc66':L.countMaster?'#9966ff':'#66cc44';
+      // Body with gradient
+      const platGr=ctx.createLinearGradient(px,py,px,py+ph);
+      platGr.addColorStop(0,pTop);platGr.addColorStop(0.3,pCol);platGr.addColorStop(1,'rgba(0,0,0,0.4)');
+      ctx.fillStyle=platGr;ctx.fillRect(px,py,pw,ph);
+      // Shine
+      ctx.fillStyle='rgba(255,255,255,0.18)';ctx.fillRect(px+2*SX,py,pw-4*SX,4*SY);
+      // Edge shadow
+      ctx.fillStyle='rgba(0,0,0,0.25)';ctx.fillRect(px,py+ph-3*SY,pw,3*SY);
+      // Timed platform: blinking indicator
+      if(pl.timed){
+        const blink=0.5+0.5*Math.sin(GS.t*6);
+        ctx.fillStyle=`rgba(255,200,50,${blink*0.6})`;
+        ctx.fillRect(px,py,pw,3*SY);
+      }
+    } else {
+      // Ground platform with richer texture
+      const grGr=ctx.createLinearGradient(px,py,px,py+Math.min(ph,60*SY));
+      grGr.addColorStop(0,L.gTop||'#3d7a3d');
+      grGr.addColorStop(0.25,L.gColor||'#2d5a2d');
+      grGr.addColorStop(1,'rgba(0,0,0,0.5)');
+      ctx.fillStyle=grGr;ctx.fillRect(px,py,pw,ph);
+      // Top edge highlight
+      ctx.fillStyle='rgba(255,255,255,0.12)';ctx.fillRect(px,py,pw,4*SY);
+      // Grass tufts
+      ctx.fillStyle='rgba(255,255,255,0.07)';
+      for(let gxi=px+18*SX;gxi<px+pw-10*SX;gxi+=38*SX){
+        ctx.fillRect(gxi,py+5*SY,3*SX,8*SY);
+        ctx.fillRect(gxi+8*SX,py+4*SY,2*SX,5*SY);
+      }
+      // Subtle vertical stone lines
+      ctx.fillStyle='rgba(0,0,0,0.08)';
+      for(let gxi=px+60*SX;gxi<px+pw-20*SX;gxi+=80*SX){
+        ctx.fillRect(gxi,py+14*SY,2*SX,Math.min(40*SY,ph-14*SY));
+      }
+    }
+  });
+
+  // ── Falling rocks
+  GS.rocks.forEach(r=>{
+    if(!r.active)return;
+    const rx=gx(r.x),ry=gy(r.ry),rs=14*SX;
+    ctx.fillStyle='#8a6a4a';ctx.beginPath();ctx.arc(rx,ry,rs,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#aa8a6a';ctx.beginPath();ctx.arc(rx-rs*0.3,ry-rs*0.3,rs*0.35,0,Math.PI*2);ctx.fill();
+  });
+
+  // ── Eggs
+  GS.eggs.forEach(egg=>{
+    if(egg.got)return;
+    const ex=gx(egg.x),ey=gy(egg.y+Math.sin(GS.t*2.5+egg.bob)*5);
+    const er=11*SX;
+    const g=ctx.createRadialGradient(ex+er*0.8,ey,er*0.3,ex+er*0.8,ey,er*1.3);
+    g.addColorStop(0,'rgba(255,240,120,0.5)');g.addColorStop(1,'rgba(255,200,50,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(ex+er*0.8,ey,er*1.4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffe066';
+    ctx.beginPath();ctx.ellipse(ex+er*0.8,ey+er*0.15,er*0.85,er*1.1,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.5)';
+    ctx.beginPath();ctx.ellipse(ex+er*0.5,ey-er*0.2,er*0.35,er*0.55,0.4,0,Math.PI*2);ctx.fill();
+  });
+
+  // ── Enemies
+  GS.enemies.forEach(e=>{
+    if(e.stunned>0){
+      ctx.globalAlpha=0.3+Math.sin(GS.t*20)*0.3;
+    }
+    const ex=gx(e.x)+19*SX,ey=gy(e.y+e.bobY)+18*SY;
+    ctx.save();ctx.translate(ex,ey);
+    if(e.dir<0)ctx.scale(-1,1);
+    const s=SX;
+    // body
+    ctx.fillStyle='#cc3333';
+    ctx.beginPath();ctx.ellipse(0,0,18*s,15*s,0,0,Math.PI*2);ctx.fill();
+    // spikes
+    ctx.fillStyle='#ff5555';
+    for(let si=-1;si<=1;si++){
+      ctx.beginPath();ctx.moveTo(si*9*s,-13*s);ctx.lineTo(si*9*s-5*s,-22*s);ctx.lineTo(si*9*s+5*s,-22*s);ctx.fill();
+    }
+    // eye
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(8*s,-4*s,5*s,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#000';ctx.beginPath();ctx.arc(9*s,-3*s,3*s,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(10*s,-4*s,1.2*s,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+    ctx.globalAlpha=1;
+  });
+
+  // ── Count Master gates
+  if(GS.countGates){
+    GS.countGates.forEach((g,i)=>{
+      if(g.done)return;
+      g.floatY=Math.sin(GS.t*2+i)*6;
+      if(P.x+P.w>g.x&&P.x<g.x+44){
+        P.x=g.x-P.w;P.vx=0;
+        if(!g.active){g.active=true;openCountGate(g);}
+      }
+    });
+  }
+
+  // ── Dino fact board
+  if(!GS.factDone&&GS.L.dinoFact){
+    const f=GS.L.dinoFact;
+    const bx=gx(f.x),by=gy(GROUND_Y-90);
+    ctx.fillStyle='#4a2a0a';
+    ctx.fillRect(bx-10*SX,by-36*SY,80*SX,46*SY);
+    ctx.fillStyle='#ffe066';ctx.font=`bold ${Math.max(9,10*SX)}px sans-serif`;ctx.textAlign='center';
+    ctx.fillText('🦕 DATO DINO',bx+30*SX,by-18*SY);
+    ctx.fillStyle='#8a5a2a';
+    ctx.fillRect(bx+28*SX,by+10*SY,4*SX,28*SY);
+  }
+
+  // ── Checkpoints
+  const cps=GS.L.checkpoints||[];
+  cps.forEach((cp,i)=>{
+    if(i<=GS.cpIdx)return;
+    const cx=gx(cp.x),cy=gy(cp.y);
+    ctx.fillStyle='rgba(100,220,100,0.4)';
+    ctx.fillRect(cx,cy-30*SY,4*SX,40*SY);
+    ctx.font=`${14*SX}px sans-serif`;ctx.textAlign='center';
+    ctx.fillText('🚩',cx+2*SX,cy-32*SY);
+  });
+
+  // ── Challenge gate
+  if(!GS.chalDone&&GS.L.challenge){
+    const c=GS.L.challenge;
+    const gx2=gx(c.x),gy2=gy(GROUND_Y);
+    const gh=160*SY,gw=40*SX;
+    ctx.fillStyle=`rgba(80,20,160,${0.85+Math.sin(GS.t*3)*0.12})`;
+    ctx.fillRect(gx2,gy2-gh,gw,gh);
+    ctx.strokeStyle='rgba(160,80,255,0.8)';ctx.lineWidth=3;
+    ctx.strokeRect(gx2,gy2-gh,gw,gh);
+    for(let bi=0;bi<3;bi++){
+      ctx.fillStyle='rgba(120,50,200,0.9)';
+      ctx.fillRect(gx2+bi*14*SX,gy2-gh,4*SX,gh);
+    }
+    ctx.fillStyle='#ffe066';ctx.font=`bold ${14*SX}px sans-serif`;ctx.textAlign='center';
+    ctx.fillText('❓',gx2+gw/2,gy2-gh-6*SY);
+  }
+
+  // ── Count Master Gates
+  if(GS.countGates){
+    GS.countGates.forEach((g,i)=>{
+      if(g.done)return;
+      const cgx=gx(g.x), cgy=gy(340), cgw=44*SX, cgh=140*SY;
+      const pulse=0.7+Math.sin(GS.t*4)*0.3;
+      // Gate pillars
+      const gGr=ctx.createLinearGradient(cgx,cgy-cgh,cgx,cgy);
+      gGr.addColorStop(0,'rgba(180,100,255,'+pulse+')');
+      gGr.addColorStop(1,'rgba(80,20,160,'+pulse+')');
+      ctx.fillStyle=gGr;
+      ctx.fillRect(cgx,cgy-cgh,8*SX,cgh);
+      ctx.fillRect(cgx+cgw-8*SX,cgy-cgh,8*SX,cgh);
+      // Gate crossbar
+      ctx.fillStyle='rgba(200,150,255,'+pulse+')';
+      ctx.fillRect(cgx,cgy-cgh,cgw,8*SY);
+      // Number equation display - floating
+      const fy=g.floatY||0;
+      const eqText=`${g.num1} ${g.op} ${g.num2} = ?`;
+      const fs=Math.max(14,18*SX);
+      ctx.font=`900 ${fs}px Nunito,sans-serif`;
+      ctx.textAlign='center';
+      // Shadow
+      ctx.fillStyle='rgba(0,0,0,0.8)';
+      ctx.fillText(eqText,cgx+cgw/2+2,cgy-cgh/2+fy+2);
+      // Text gradient
+      ctx.fillStyle='#ffe066';
+      ctx.fillText(eqText,cgx+cgw/2,cgy-cgh/2+fy);
+      // Stars around gate
+      for(let si=0;si<4;si++){
+        const sa=GS.t*2+si*Math.PI/2;
+        const sx2=cgx+cgw/2+Math.cos(sa)*28*SX;
+        const sy2=cgy-cgh/2+Math.sin(sa)*28*SY+fy;
+        ctx.font=`${10*SX}px sans-serif`;ctx.fillText('⭐',sx2,sy2);
+      }
+    });
+  }
+
+  // ── End flag
+  {
+    const fx=gx(GS.L.endX),fy=gy(GROUND_Y);
+    ctx.fillStyle='#8a6a4a';ctx.fillRect(fx-2*SX,fy-130*SY,5*SX,130*SY);
+    ctx.fillStyle='#ff4400';
+    ctx.beginPath();ctx.moveTo(fx+3*SX,fy-128*SY);ctx.lineTo(fx+46*SX,fy-110*SY);ctx.lineTo(fx+3*SX,fy-92*SY);ctx.fill();
+    ctx.font=`${18*SX}px sans-serif`;ctx.textAlign='center';ctx.fillText('🏁',fx+24*SX,fy-105*SY);
+  }
+
+  // ── Player
+  renderPlayer();
+
+  // ── Particles
+  GS.particles.forEach(p=>{
+    ctx.globalAlpha=Math.max(0,Math.min(1,p.life*2));
+    ctx.fillStyle=p.col;
+    ctx.beginPath();ctx.arc(gx(p.x),gy(p.y),p.sz*SX,0,Math.PI*2);ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // ── Float texts
+  GS.floats.forEach(f=>{
+    ctx.globalAlpha=Math.max(0,f.a);
+    ctx.font=`bold ${18*SX}px sans-serif`;ctx.textAlign='center';
+    ctx.fillText(f.txt,gx(f.x),gy(f.y));
+  });
+  ctx.globalAlpha=1;
+
+  // ── Dark mode overlay
+  if(L.dark){
+    const P=GS.player;
+    const lx=gx(P.x+P.w/2),ly=gy(P.y+P.h/2);
+    const r=160*Math.max(SX,SY);
+    const dg=ctx.createRadialGradient(lx,ly,0,lx,ly,r);
+    dg.addColorStop(0,'rgba(0,0,0,0)');
+    dg.addColorStop(0.55,'rgba(0,0,0,0.45)');
+    dg.addColorStop(1,'rgba(0,0,0,0.95)');
+    ctx.fillStyle=dg;ctx.fillRect(0,0,SW,SH);
+  }
+
+  // ── Death flash
+  if(GS.dead){
+    ctx.fillStyle=`rgba(255,0,0,${Math.abs(Math.sin(GS.deadT*12))*0.3})`;
+    ctx.fillRect(0,0,SW,SH);
+  }
+}
+
+function renderPlayer(){
+  const P=GS.player;
+  if(P.invin>0&&Math.floor(P.invin*9)%2===0)return;
+  const px=gx(P.x+P.w/2),py=gy(P.y+P.h/2);
+  drawDinoSprite(ctx,px,py,SX,P,getDinoColor(),dinoCustom.accessories);
+}
+
+// ─── SPRITE REUTILIZABLE DEL DINO ⚽ ────────────────────────
+// Dibuja a Isaac-dino con color personalizado y hasta 2 accesorios.
+// state: {dir,state:'idle'|'run'|'jump',animF,h(opcional, default 44)}
+function drawDinoSprite(c,px,py,s,state,colorSet,accessories){
+  accessories=accessories||[];
+  const dir=state.dir||1;
+  const anim=state.state||'idle';
+  const animF=state.animF||0;
+  const H=state.h||44; // altura de referencia (igual a P.h del juego)
+
+  c.save();c.translate(px,py);
+  if(dir<0)c.scale(-1,1);
+
+  // sombra
+  c.fillStyle='rgba(0,0,0,0.2)';
+  c.beginPath();c.ellipse(0,H/2*s+2*s,17*s,5*s,0,0,Math.PI*2);c.fill();
+
+  const bop=anim==='run'?Math.sin(animF*Math.PI/2)*2.5*s:0;
+  c.translate(0,bop);
+
+  // cola
+  c.fillStyle=colorSet.tail;
+  c.save();c.translate(-17*s,-3*s);
+  c.beginPath();c.moveTo(0,0);c.lineTo(-16*s,9*s);c.lineTo(-9*s,15*s);c.lineTo(0,9*s);c.fill();
+  c.restore();
+
+  // capa (detrás del cuerpo, si tiene)
+  if(accessories.includes('cape')){
+    c.fillStyle='rgba(200,30,30,0.92)';
+    c.save();c.translate(-6*s,-H/2*s+6*s);
+    c.beginPath();
+    c.moveTo(0,0);c.lineTo(-4*s,2*s);c.quadraticCurveTo(-10*s,22*s,-2*s,30*s);
+    c.lineTo(8*s,30*s);c.quadraticCurveTo(4*s,14*s,6*s,0);
+    c.fill();
+    c.restore();
+  }
+
+  // piernas
+  const lg=anim==='run'?Math.sin(animF*Math.PI/2)*11*s:0;
+  c.fillStyle=colorSet.dark;
+  c.fillRect(-9*s,H/2*s-18*s,9*s,18*s+lg);
+  c.fillRect(2*s, H/2*s-18*s,9*s,18*s-lg);
+  // botines (si tiene), si no, pies normales
+  if(accessories.includes('cleats')){
+    c.fillStyle='#1a1a1a';
+    c.fillRect(-11*s,H/2*s-2*s+lg,13*s,7*s);
+    c.fillRect(0*s,  H/2*s-2*s-lg,13*s,7*s);
+    c.fillStyle='#ffe066';
+    c.fillRect(-11*s,H/2*s+3*s+lg,13*s,2*s);
+    c.fillRect(0*s,  H/2*s+3*s-lg,13*s,2*s);
+  } else {
+    c.fillStyle=colorSet.darker;
+    c.fillRect(-11*s,H/2*s-2*s+lg,13*s,7*s);
+    c.fillRect(0*s,  H/2*s-2*s-lg,13*s,7*s);
+  }
+
+  // cuerpo
+  c.fillStyle=colorSet.body;
+  c.beginPath();c.ellipse(0,-3*s,15*s,16*s,0,0,Math.PI*2);c.fill();
+  c.fillStyle=colorSet.belly;
+  c.beginPath();c.ellipse(4*s,-3*s,10*s,10*s,0,0,Math.PI*2);c.fill();
+
+  // estrella crack en el pecho (si tiene)
+  if(accessories.includes('star')){
+    c.fillStyle='#ffe066';
+    c.font=`900 ${10*s}px sans-serif`;c.textAlign='center';
+    c.fillText('⭐',4*s,0);
+  }
+
+  // banda de capitán (brazo)
+  if(accessories.includes('captain')){
+    c.fillStyle='#ffe066';
+    c.save();c.translate(2*s,-6*s);c.rotate(-0.5);
+    c.fillRect(-8*s,-3*s,16*s,5*s);
+    c.restore();
+    c.fillStyle='#222';c.font=`900 ${4*s}px sans-serif`;c.textAlign='center';
+    c.fillText('C',2*s,-6*s);
+  }
+
+  // bufanda (cuello)
+  if(accessories.includes('scarf')){
+    c.fillStyle='#cc2222';
+    c.beginPath();c.ellipse(10*s,-10*s,8*s,5*s,0.2,0,Math.PI*2);c.fill();
+    c.fillStyle='#fff';
+    c.beginPath();c.ellipse(10*s,-10*s,8*s,2*s,0.2,0,Math.PI*2);c.fill();
+    // colita de la bufanda
+    c.fillStyle='#cc2222';
+    c.fillRect(6*s,-7*s,4*s,12*s);
+  }
+
+  // cabeza
+  c.fillStyle=colorSet.body;
+  c.beginPath();c.ellipse(8*s,-H/2*s+4*s,15*s,13*s,0.15,0,Math.PI*2);c.fill();
+
+  // ojo
+  c.fillStyle='#fff';c.beginPath();c.arc(14*s,-H/2*s+4*s,5.5*s,0,Math.PI*2);c.fill();
+  c.fillStyle='#111';c.beginPath();c.arc(14.5*s,-H/2*s+4.5*s,3.5*s,0,Math.PI*2);c.fill();
+  c.fillStyle='#fff';c.beginPath();c.arc(15.5*s,-H/2*s+5*s,1.2*s,0,Math.PI*2);c.fill();
+
+  // sonrisa (no al saltar)
+  if(anim!=='jump'){
+    c.strokeStyle=colorSet.dark;c.lineWidth=2*s;
+    c.beginPath();c.arc(12*s,-H/2*s+8*s,5.5*s,0.2,Math.PI-0.2);c.stroke();
+  }
+
+  // escamas decorativas
+  c.fillStyle='rgba(255,255,255,0.22)';
+  for(let i=0;i<3;i++){
+    c.beginPath();c.ellipse(-5*s+i*6*s,-10*s-i*3*s,3.5*s,5.5*s,0.3,0,Math.PI*2);c.fill();
+  }
+
+  // accesorios de cabeza (encima de todo, al final)
+  if(accessories.includes('crown')){
+    c.font=`${16*s}px sans-serif`;c.textAlign='center';
+    c.fillText('👑',12*s,-H/2*s-10*s);
+  }
+  if(accessories.includes('goggles')){
+    c.fillStyle='#222';
+    c.beginPath();c.ellipse(13*s,-H/2*s+3*s,7*s,4.5*s,0.1,0,Math.PI*2);c.fill();
+    c.fillStyle='rgba(100,200,255,0.7)';
+    c.beginPath();c.ellipse(13*s,-H/2*s+3*s,5*s,3*s,0.1,0,Math.PI*2);c.fill();
+  }
+
+  c.restore();
+}
+
+// ─── INIT ──────────────────────────────────────────────────
+
+// ── SECRET DEV MODE ─────────────────────────────────────────
+let secretTaps=0, secretTimer=null;
+const SECRET_CODE='ISAACDEV'; // keyboard: type ISAACDEV
+let secretTyped='';
+
+function secretTap(){
+  secretTaps++;
+  const hint=document.getElementById('secret-hint');
+  // Show progress dots
+  if(hint){
+    hint.style.color=`rgba(255,220,50,${secretTaps/5})`;
+    hint.textContent='🦕'.repeat(secretTaps)+'⬜'.repeat(Math.max(0,5-secretTaps));
+  }
+  // Play a small blip
+  const ac=getAC();
+  if(ac){
+    try{
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.frequency.value=400+secretTaps*120;
+      g.gain.setValueAtTime(0.15,ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.08);
+      o.connect(g);g.connect(ac.destination);
+      o.start();o.stop(ac.currentTime+0.1);
+    }catch(e){}
+  }
+  if(secretTimer)clearTimeout(secretTimer);
+  secretTimer=setTimeout(()=>{
+    secretTaps=0;
+    if(hint){hint.style.color='rgba(255,255,255,0)';hint.textContent='🦕🦕🦕🦕🦕';}
+  },2000);
+  if(secretTaps>=5){
+    secretTaps=0;
+    if(secretTimer)clearTimeout(secretTimer);
+    if(hint){hint.style.color='rgba(255,255,255,0)';}
+    openDevMode();
+  }
+}
+
+// Keyboard secret: type "ISAACDEV"
+window.addEventListener('keypress',e=>{
+  secretTyped+=e.key.toUpperCase();
+  if(secretTyped.length>SECRET_CODE.length)
+    secretTyped=secretTyped.slice(-SECRET_CODE.length);
+  if(secretTyped===SECRET_CODE)openDevMode();
+});
+
+function openDevMode(){
+  SFX.win();
+  // Build level grid
+  const grid=document.getElementById('dev-level-grid');
+  grid.innerHTML='';
+  const names=[
+    '🌿 Bosque Saltos','💧 Río Plataformas','⛰️ Valle Rocas',
+    '🕯️ Cueva Oscura','🌋 Islas Lava','🏰 Castillo Dino',
+    '📚 Puentes Sílabas','🏆 Gran Final','🔢 Cuevas Conteo','✖️ Templo Numérico'
+  ];
+  LEVELS.forEach((lvl,i)=>{
+    const btn=document.createElement('button');
+    btn.style.cssText='background:linear-gradient(135deg,rgba(255,220,50,0.15),rgba(255,150,0,0.15));color:#fff;border:2px solid rgba(255,220,50,0.4);border-radius:12px;padding:10px 8px;font-size:13px;font-family:Nunito,sans-serif;font-weight:900;cursor:pointer;text-align:center;';
+    const hasBoss=lvl.boss?'⚔️':'';
+    btn.innerHTML=`<div style="font-size:20px">${lvl.emoji}${hasBoss}</div><div>Nivel ${i+1}</div><div style="font-size:10px;color:#adf;opacity:0.8">${names[i]||''}</div>`;
+    btn.onclick=()=>{
+      hide('dev-scr');
+      DIFF='normal';
+      startLevel(i);
+    };
+    grid.appendChild(btn);
+  });
+  // Add boss test buttons
+  const bossHeader=document.createElement('div');
+  bossHeader.style='grid-column:1/-1;color:#ff9966;font-size:13px;font-weight:900;font-family:Nunito,sans-serif;padding:8px 0 4px;border-top:1px solid rgba(255,150,0,0.3);margin-top:4px;';
+  bossHeader.textContent='⚔️ Probar Peleas Directamente';
+  grid.appendChild(bossHeader);
+  [['trex','🦖 T-Rex',6],['tricera','🦏 Triceratops',7],['spino','🐊 Spinosaurus',8]].forEach(([id,label,lvl])=>{
+    const btn=document.createElement('button');
+    btn.style.cssText='background:linear-gradient(135deg,rgba(255,50,50,0.2),rgba(150,0,0,0.2));color:#ff9966;border:2px solid rgba(255,100,50,0.4);border-radius:12px;padding:10px 8px;font-size:13px;font-family:Nunito,sans-serif;font-weight:900;cursor:pointer;';
+    btn.innerHTML=`${label}`;
+    btn.onclick=()=>{hide('dev-scr');startBoss(id,lvl);};
+    grid.appendChild(btn);
+  });
+  hide('start-scr');
+  document.getElementById('dev-scr').style.display='flex';
+}
+
+show('start-scr');
+</script>
+</body>
+</html>
